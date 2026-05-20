@@ -1,40 +1,40 @@
-# 🎅 Secret Santa Matcher
+# Secret Santa Matcher
 
-A premium, elegant, and secure **WPF desktop application** written in C# and .NET 10 to coordinate Secret Santa gift exchanges. It handles complex relationship exclusions, prevents mirror matches, provides a real-time email template sandbox preview, and automates safe distribution using Gmail SMTP.
-
----
-
-## ✨ Features
-
-- **🧠 Atomic Backtracking Exclusions Engine**: Leverages a highly-efficient recursive backtracking DFS solver that instantly computes valid derangement circular chains under strict significant other exclusions.
-- **🔄 Toggleable Mirror Match Prevention**: Optional setting to prevent reciprocal pairings (e.g., A buying for B, and B buying for A) to maximize match randomness and gift variety.
-- **🎨 Premium Slate-Dark UI Design**: A stunning, responsive interface utilizing cohesive dark backgrounds, glassmorphism-inspired borders, modern typography, and hover micro-animations.
-- **📝 Live Sandbox Email Preview**: Real-time rendering card that shows exactly what your emails will look like as you draft subjects and bodies with active placeholders.
-- **📧 Automated SMTP Dispatcher**: Distributes individual matching invitations securely via Gmail using a secure 16-character **Google App Password**. Includes real-time progress bars and operation logs.
-- **💾 Auto-Save & Clean Configurations**: Automatically persists your session locally. Supports exporting and importing fully anonymous JSON session configurations (excludes SMTP app passwords for safety).
-- **🛠️ Atomically Bound Relationships**: Clean participant addition, editing, and deletion cycles. Setting B as A's significant other mutually binds A as B's significant other, clearing any previous stale associations to guarantee zero dangling solver references.
+A WPF desktop application for coordinating Secret Santa gift exchanges. The application supports relationship exclusions, prevents mirror matches, provides a live email template preview, and automates match distribution using Gmail SMTP.
 
 ---
 
-## 🚀 Getting Started
+## Features
+
+- **Backtracking Solver**: Uses a recursive backtracking search to generate valid gift-giving circles that respect participant exclusions.
+- **Mirror Match Prevention**: Optional setting to exclude reciprocal matches (where A buys for B and B buys for A) to increase variety.
+- **Slate Dark UI**: A dark-themed layout with aligned input fields and tabbed navigation.
+- **Live Email Template Preview**: Renders a live preview of the drafted email subject and body as you type, using template tokens.
+- **Gmail SMTP Integration**: Automatically sends individual matches via Gmail using Google App Passwords. Includes progress tracking and runtime logs.
+- **Session Auto-Save**: Saves your session locally on exit. Supports importing and exporting configurations via JSON.
+- **Bidirectional Exclusions Management**: Adding, editing, or deleting a participant dynamically updates mutual significant other links to keep the solver's state consistent.
+
+---
+
+## Getting Started
 
 ### Prerequisites
 
 - **.NET 10.0 SDK** or higher.
-- **Windows OS** (WPF requires Windows Desktop environment).
+- **Windows OS** (WPF requires a Windows desktop environment).
 
 ### Run Locally
 
 1. Clone or download the repository.
-2. Open your terminal in the project directory.
-3. Run the following command to restore packages and launch the application:
+2. Open a terminal in the project directory.
+3. Run:
    ```powershell
    dotnet run
    ```
 
 ### Compile Standalone Executable
 
-To compile a single, optimized, self-contained Windows executable (`.exe`) that runs on any modern Windows PC without requiring a .NET installation:
+To publish a self-contained Windows executable that runs on any modern Windows PC without requiring a system-wide .NET installation, run:
 
 ```powershell
 dotnet publish -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -p:PublishReadyToRun=true -p:IncludeNativeLibrariesForSelfExtract=true
@@ -45,41 +45,39 @@ The compiled standalone executable will be generated at:
 
 ---
 
-## 🛠️ Usage Guide
+## Usage Guide
 
-### Step 1: Manage Participants
-- Navigate to the **Manage Participants** tab.
-- Add participants by entering their Name, Email, and optionally an online Wishlist URL.
-- **Bidirectional Exclusions**: If two participants are couples/partners and shouldn't buy for each other, select them in the **Significant Other** dropdown. Setting B as A's partner automatically updates B to link back to A.
-- You can **Edit** or **Delete** participants on the fly. Deletions and edits automatically clean up mutual exclusions safely.
+### 1. Manage Participants
+- Go to the **Manage Participants** tab.
+- Enter a participant's Name, Email, and optionally a Wishlist URL.
+- **Exclusions**: Use the **Significant Other** dropdown to pair couples or partners who should not buy for each other. Setting B as A's partner automatically updates B to link back to A.
+- Edit or delete participants directly. Deletions and edits automatically clean up mutual exclusions.
 
-### Step 2: Customize Email Template
-- Navigate to the **Email Template** tab.
-- Draft your email subject and body. Use the following dynamic placeholder tokens which will be automatically replaced for each participant:
-  - `{Giver}`: The name of the person receiving the email (who buys the gift).
-  - `{Receiver}`: The name of the person they matched with (who gets the gift).
+### 2. Customize Email Template
+- Go to the **Email Template** tab.
+- Write your email subject and body using the following dynamic tokens:
+  - `{Giver}`: The name of the sender who buys the gift.
+  - `{Receiver}`: The name of the recipient who gets the gift.
   - `{Wishlist}`: The wishlist URL of the recipient.
   - `{Organizer}`: The name of the exchange coordinator.
-- Inspect the **Live Sandbox Preview** card to see the beautiful live rendering as you type.
+- Inspect the **Live Sandbox Preview** card to see the rendered output.
 
-### Step 3: Configure SMTP credentials
-- Navigate to the **Gmail Settings** tab.
-- Enter the **Organizer's Name** and **Gmail Address**.
-- Enter your **Google App Password** (16-digit passcode). 
-- *Note: Your standard Google login password will not work. Follow the step-by-step App Password guide provided inside the tab.*
-- Click **Test Connection** to verify SMTP connectivity (this sends a test email to yourself to confirm credentials).
+### 3. Configure SMTP Settings
+- Go to the **Gmail Settings** tab.
+- Enter the **Organizer's Name**, **Gmail Address**, and a **Google App Password** (16-character passcode).
+- Click **Test Connection** to send a test email and verify your SMTP credentials.
 
-### Step 4: Run Solver & Distribute
-- Navigate to the **Match & Send Emails** tab.
-- **Mirror Matches**: Check **Prevent mirror matches** if you want to avoid reciprocal pairings.
-- Click **Generate Secret Santa Matching**. If there are no unsolvable bottlenecks, the solver will succeed instantly.
-- **Organizer Eye Only Review**: Toggle **Reveal calculated matches list** if you want to inspect pairings before sending.
-- Click **Distribute Match Emails Now** to dispatch matching invitations individually.
+### 4. Solve & Distribute
+- Go to the **Match & Send Emails** tab.
+- Toggle **Prevent mirror matches** to exclude reciprocal pairings.
+- Click **Generate Secret Santa Matching**.
+- Toggle **Reveal calculated matches list** if you want to inspect pairings before sending.
+- Click **Distribute Match Emails Now** to send individual matching invitations.
 
 ---
 
-## 🔒 Security & Privacy
+## Security & Privacy
 
-- **App Password Protection**: Your Gmail App Password is obfuscated locally on disk using symmetric XOR obfuscation. It is never stored in plaintext.
-- **Config Export Safety**: When you export your session to a JSON file to share with others, SMTP App Passwords and credentials are automatically stripped out, ensuring zero risk of credential leaks.
-- **Local Sandbox Execution**: All calculation, solving, and saving is performed locally on your machine. No participant names, emails, wishlists, or matches are ever uploaded to third-party servers.
+- **Password Obfuscation**: The Gmail App Password is obfuscated locally on disk using a symmetric XOR key.
+- **Safe Exports**: Session exports to JSON automatically strip SMTP passwords to prevent credential leaks.
+- **Local Processing**: All data and match calculations remain strictly on your local machine.
