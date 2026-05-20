@@ -1,0 +1,32 @@
+# .gitignore for .NET WPF project
+
+# Build outputs
+bin/
+obj/
+[Dd]ebug/
+[Rr]elease/
+x64/
+x86/
+
+# IDE files
+.vs/
+.idea/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+# System & OS Files
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# Secrets & Sessions
+*.json
+!appsettings.json
+!appsettings.*.json
+
+# MSBuild / Publish output
+*.publish.xml
+*.pubxml
+*.pubxml.user

@@ -1,0 +1,647 @@
+<Window x:Class="SecretSantaMatcher.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:SecretSantaMatcher"
+        mc:Ignorable="d"
+        Title="Secret Santa Matcher" 
+        Height="720" Width="1100"
+        MinWidth="1050" MinHeight="650"
+        WindowStartupLocation="CenterScreen"
+        Background="{StaticResource BgDark}"
+        Foreground="{StaticResource TextPrimary}">
+
+    <Grid>
+        <Grid.ColumnDefinitions>
+            <!-- Sidebar Panel -->
+            <ColumnDefinition Width="250"/>
+            <!-- Divider Line -->
+            <ColumnDefinition Width="1"/>
+            <!-- Main Content Area -->
+            <ColumnDefinition Width="*"/>
+        </Grid.ColumnDefinitions>
+
+        <!-- ==================== SIDEBAR ==================== -->
+        <Border Grid.Column="0" Background="#0b0f19" Padding="20">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="20"/>
+                    <RowDefinition Height="*"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+
+                <!-- App Header Logo / Title -->
+                <StackPanel Grid.Row="0">
+                    <TextBlock Text="🎅 Secret Santa" 
+                               FontSize="22" 
+                               FontWeight="Bold" 
+                               Foreground="{StaticResource AccentCyan}"/>
+                    <TextBlock Text="Matcher &amp; Sender" 
+                               FontSize="14" 
+                               Foreground="{StaticResource TextSecondary}"
+                               Margin="28,2,0,0"/>
+                </StackPanel>
+
+                <!-- Navigation Sidebar Buttons -->
+                <StackPanel Grid.Row="2" Margin="0,15,0,0">
+                    <!-- Tab Button: Participants -->
+                    <Button x:Name="TabParticipantsBtn" 
+                            Click="TabParticipants_Click"
+                            Margin="0,0,0,10"
+                            Padding="12,12"
+                            HorizontalContentAlignment="Left">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="👥" FontSize="16" Margin="0,0,12,0"/>
+                            <TextBlock Text="Manage Participants" FontSize="14" FontWeight="SemiBold"/>
+                        </StackPanel>
+                    </Button>
+
+                    <!-- Tab Button: Email Template -->
+                    <Button x:Name="TabEmailBtn" 
+                            Click="TabEmail_Click"
+                            Margin="0,0,0,10"
+                            Padding="12,12"
+                            HorizontalContentAlignment="Left">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="✉️" FontSize="16" Margin="0,0,12,0"/>
+                            <TextBlock Text="Email Template" FontSize="14" FontWeight="SemiBold"/>
+                        </StackPanel>
+                    </Button>
+
+                    <!-- Tab Button: SMTP Configuration -->
+                    <Button x:Name="TabSmtpBtn" 
+                            Click="TabSmtp_Click"
+                            Margin="0,0,0,10"
+                            Padding="12,12"
+                            HorizontalContentAlignment="Left">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="⚙️" FontSize="16" Margin="0,0,12,0"/>
+                            <TextBlock Text="Gmail Settings" FontSize="14" FontWeight="SemiBold"/>
+                        </StackPanel>
+                    </Button>
+
+                    <!-- Tab Button: Match & Send -->
+                    <Button x:Name="TabMatchBtn" 
+                            Click="TabMatch_Click"
+                            Margin="0,0,0,10"
+                            Padding="12,12"
+                            HorizontalContentAlignment="Left">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="🎁" FontSize="16" Margin="0,0,12,0"/>
+                            <TextBlock Text="Match &amp; Send Emails" FontSize="14" FontWeight="SemiBold"/>
+                        </StackPanel>
+                    </Button>
+                </StackPanel>
+
+                <!-- Sidebar Footer -->
+                <StackPanel Grid.Row="3" Margin="0,10,0,0">
+                    <Border BorderThickness="0,1,0,0" BorderBrush="{StaticResource BorderDark}" Padding="0,15,0,0">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <!-- Import/Export Config Buttons -->
+                            <Button Content="Import JSON" Click="ImportConfig_Click" Margin="0,0,5,0" Padding="5,8" FontSize="11"/>
+                            <Button Grid.Column="1" Content="Export JSON" Click="ExportConfig_Click" Margin="5,0,0,0" Padding="5,8" FontSize="11"/>
+                        </Grid>
+                    </Border>
+                    <TextBlock Text="v1.0.0 • Local Only" 
+                               Foreground="{StaticResource TextMuted}" 
+                               FontSize="10" 
+                               HorizontalAlignment="Center" 
+                               Margin="0,10,0,0"/>
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <!-- Divider Line -->
+        <Border Grid.Column="1" Background="{StaticResource BorderDark}"/>
+
+        <!-- ==================== MAIN DISPLAY PANEL ==================== -->
+        <Grid Grid.Column="2" Margin="30,25,30,25">
+            
+            <!-- 1. TAB: PARTICIPANTS -->
+            <Grid x:Name="TabParticipantsPanel" Visibility="Visible">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="20"/>
+                    <RowDefinition Height="*"/>
+                </Grid.RowDefinitions>
+
+                <StackPanel Grid.Row="0">
+                    <TextBlock Text="Manage Participants" FontSize="24" FontWeight="Bold"/>
+                    <TextBlock Text="Input exchange members, wishlists, and significant other exclusion pairings." Foreground="{StaticResource TextSecondary}" Margin="0,4,0,0" FontSize="13"/>
+                </StackPanel>
+
+                <Grid Grid.Row="2">
+                    <Grid.ColumnDefinitions>
+                        <!-- Form Area -->
+                        <ColumnDefinition Width="320"/>
+                        <!-- Spacer -->
+                        <ColumnDefinition Width="30"/>
+                        <!-- List/Table Area -->
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+
+                    <!-- Add Participant Form Card -->
+                    <Border Grid.Column="0" Background="{StaticResource BgCard}" CornerRadius="12" Padding="20" VerticalAlignment="Top" BorderThickness="1" BorderBrush="{StaticResource BorderDark}">
+                        <StackPanel>
+                            <TextBlock Text="Add Participant" FontSize="16" FontWeight="Bold" Margin="0,0,0,15"/>
+
+                            <!-- Input: Name -->
+                            <TextBlock Text="Full Name *" Style="{StaticResource HeaderLabelStyle}"/>
+                            <TextBox x:Name="InputName" Margin="0,0,0,12" ToolTip="Enter participant's full name."/>
+
+                            <!-- Input: Email -->
+                            <TextBlock Text="Email Address *" Style="{StaticResource HeaderLabelStyle}"/>
+                            <TextBox x:Name="InputEmail" Margin="0,0,0,12" ToolTip="Where their secret match email will be sent."/>
+
+                            <!-- Input: Wishlist Link -->
+                            <TextBlock Text="Wishlist URL (Optional)" Style="{StaticResource HeaderLabelStyle}"/>
+                            <TextBox x:Name="InputWishlist" Margin="0,0,0,12" ToolTip="Link to Amazon, Elfster, or any website wishlist."/>
+
+                            <!-- Input: Significant Other -->
+                            <TextBlock Text="Significant Other (Exclusion)" Style="{StaticResource HeaderLabelStyle}"/>
+                            <ComboBox x:Name="InputSO" Margin="0,0,0,20" DisplayMemberPath="Name" SelectedValuePath="Id" ToolTip="Exclude this person from being matched with them (mutual exclusion)."/>
+
+                            <!-- Submit Button -->
+                            <Button Style="{StaticResource PrimaryButtonStyle}" Content="Add Exchange Member" Click="AddParticipant_Click" HorizontalAlignment="Stretch"/>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Participants List View -->
+                    <Grid Grid.Column="2">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="10"/>
+                            <RowDefinition Height="*"/>
+                        </Grid.RowDefinitions>
+
+                        <Grid Grid.Row="0">
+                            <TextBlock x:Name="CountLabel" Text="All Members (0)" FontSize="16" FontWeight="Bold" VerticalAlignment="Center"/>
+                            <Button Content="Clear All" Click="ClearAllParticipants_Click" Style="{StaticResource DangerButtonStyle}" HorizontalAlignment="Right" VerticalAlignment="Center"/>
+                        </Grid>
+
+                        <Border Grid.Row="2" Background="{StaticResource BgCard}" CornerRadius="12" Padding="15" BorderThickness="1" BorderBrush="{StaticResource BorderDark}">
+                            <Grid>
+                                <!-- Empty state message -->
+                                <StackPanel x:Name="EmptyStatePanel" VerticalAlignment="Center" HorizontalAlignment="Center">
+                                    <TextBlock Text="🎁" FontSize="48" HorizontalAlignment="Center" Opacity="0.5" Margin="0,0,0,10"/>
+                                    <TextBlock Text="No participants added yet" FontSize="15" FontWeight="SemiBold" HorizontalAlignment="Center" Foreground="{StaticResource TextSecondary}"/>
+                                    <TextBlock Text="Add members using the form to get started." FontSize="12" HorizontalAlignment="Center" Foreground="{StaticResource TextMuted}" Margin="0,4,0,0"/>
+                                </StackPanel>
+
+                                <!-- Grid list of members -->
+                                <ListBox x:Name="ParticipantsList" 
+                                         Background="Transparent" 
+                                         BorderThickness="0"
+                                         ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                                         ScrollViewer.VerticalScrollBarVisibility="Auto">
+                                    <ListBox.ItemContainerStyle>
+                                        <Style TargetType="ListBoxItem">
+                                            <Setter Property="Background" Value="Transparent"/>
+                                            <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+                                            <Setter Property="Padding" Value="0,0,0,10"/>
+                                            <Setter Property="Template">
+                                                <Setter.Value>
+                                                    <ControlTemplate TargetType="ListBoxItem">
+                                                        <Border Margin="0,0,0,8" 
+                                                                Padding="12,10" 
+                                                                Background="#161e2e" 
+                                                                BorderThickness="1" 
+                                                                BorderBrush="{StaticResource BorderDark}" 
+                                                                CornerRadius="8">
+                                                            <ContentPresenter />
+                                                        </Border>
+                                                    </ControlTemplate>
+                                                </Setter.Value>
+                                            </Setter>
+                                        </Style>
+                                    </ListBox.ItemContainerStyle>
+                                    <ListBox.ItemTemplate>
+                                        <DataTemplate>
+                                            <Grid>
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="*"/>
+                                                    <ColumnDefinition Width="Auto"/>
+                                                </Grid.ColumnDefinitions>
+
+                                                <StackPanel Grid.Column="0">
+                                                    <!-- Member name and email -->
+                                                    <StackPanel Orientation="Horizontal">
+                                                        <TextBlock Text="{Binding Name}" FontWeight="Bold" FontSize="14" Foreground="{StaticResource TextPrimary}"/>
+                                                        <TextBlock Text="{Binding Email, StringFormat=' ({0})'}" Foreground="{StaticResource TextSecondary}" FontSize="12" VerticalAlignment="Center" Margin="5,0,0,0"/>
+                                                    </StackPanel>
+                                                    
+                                                    <!-- Constraints / wishlist links -->
+                                                    <WrapPanel Margin="0,4,0,0" VerticalAlignment="Center">
+                                                        <!-- Wishlist Link Badge -->
+                                                        <Border Background="#1e1b4b" BorderThickness="1" BorderBrush="#4338ca" CornerRadius="4" Padding="5,2" Margin="0,0,8,0" Visibility="{Binding WishlistUrl, Converter={x:Static local:Converters.VisibilityConverter}}">
+                                                            <StackPanel Orientation="Horizontal">
+                                                                <TextBlock Text="🔗 Wishlist" FontSize="10" Foreground="#a5b4fc" FontWeight="Bold"/>
+                                                            </StackPanel>
+                                                        </Border>
+                                                        
+                                                        <!-- Significant Other Badge -->
+                                                        <Border Background="#1c1917" BorderThickness="1" BorderBrush="#78716c" CornerRadius="4" Padding="5,2" Visibility="{Binding SignificantOtherId, Converter={x:Static local:Converters.VisibilityConverter}}">
+                                                            <StackPanel Orientation="Horizontal">
+                                                                <TextBlock Text="❤️ Excluded: " FontSize="10" Foreground="{StaticResource TextSecondary}"/>
+                                                                <TextBlock x:Name="SOText" Text="{Binding SignificantOtherId, Converter={x:Static local:Converters.SoNameConverter}}" FontSize="10" Foreground="#f43f5e" FontWeight="Bold"/>
+                                                            </StackPanel>
+                                                        </Border>
+                                                    </WrapPanel>
+                                                </StackPanel>
+
+                                                <!-- Delete member button -->
+                                                <Button Grid.Column="1" 
+                                                        Content="Delete" 
+                                                        Style="{StaticResource DangerButtonStyle}"
+                                                        Click="DeleteParticipant_Click" 
+                                                        Tag="{Binding Id}"
+                                                        VerticalAlignment="Center"/>
+                                            </Grid>
+                                        </DataTemplate>
+                                    </ListBox.ItemTemplate>
+                                </ListBox>
+                            </Grid>
+                        </Border>
+                    </Grid>
+                </Grid>
+            </Grid>
+
+            <!-- 2. TAB: EMAIL TEMPLATE -->
+            <Grid x:Name="TabEmailPanel" Visibility="Collapsed">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="20"/>
+                    <RowDefinition Height="*"/>
+                </Grid.RowDefinitions>
+
+                <StackPanel Grid.Row="0">
+                    <TextBlock Text="Customize Email Invitation" FontSize="24" FontWeight="Bold"/>
+                    <TextBlock Text="Draft the email content sent to givers. Use placeholders to insert match data dynamically." Foreground="{StaticResource TextSecondary}" Margin="0,4,0,0" FontSize="13"/>
+                </StackPanel>
+
+                <Grid Grid.Row="2">
+                    <Grid.ColumnDefinitions>
+                        <!-- Form Editor -->
+                        <ColumnDefinition Width="1.2*"/>
+                        <!-- Spacer -->
+                        <ColumnDefinition Width="30"/>
+                        <!-- Dynamic Preview -->
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+
+                    <!-- Template Form Card -->
+                    <Border Grid.Column="0" Background="{StaticResource BgCard}" CornerRadius="12" Padding="20" BorderThickness="1" BorderBrush="{StaticResource BorderDark}">
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="10"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="10"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="*"/>
+                                <RowDefinition Height="15"/>
+                                <RowDefinition Height="Auto"/>
+                            </Grid.RowDefinitions>
+
+                            <TextBlock Grid.Row="0" Text="Draft Templates" FontSize="16" FontWeight="Bold"/>
+
+                            <!-- Subject Input -->
+                            <TextBlock Grid.Row="2" Text="Email Subject Line" Style="{StaticResource HeaderLabelStyle}"/>
+                            <TextBox Grid.Row="3" x:Name="TemplateSubject" Margin="0,0,0,15" TextChanged="Template_TextChanged" ToolTip="Subject line of the email."/>
+
+                            <!-- Body Input -->
+                            <TextBlock Grid.Row="5" Text="Email Body Text" Style="{StaticResource HeaderLabelStyle}"/>
+                            <TextBox Grid.Row="6" x:Name="TemplateBody" 
+                                     AcceptsReturn="True" 
+                                     TextWrapping="Wrap" 
+                                     VerticalContentAlignment="Top" 
+                                     TextChanged="Template_TextChanged"
+                                     ToolTip="Write your message here. Templates support both Plain-text and HTML formatting (e.g. &lt;p&gt;, &lt;b&gt;, etc.)"/>
+
+                            <!-- Dynamic Helper Badges -->
+                            <StackPanel Grid.Row="8">
+                                <TextBlock Text="Placeholder Token Tokens (Clicking values doesn't insert, but write them exactly):" FontSize="11" Foreground="{StaticResource TextSecondary}" Margin="0,0,0,6"/>
+                                <WrapPanel>
+                                    <Border Background="#1e293b" BorderThickness="1" BorderBrush="{StaticResource AccentPrimary}" CornerRadius="4" Padding="6,3" Margin="0,0,6,6" ToolTip="Inserts the giver's full name.">
+                                        <TextBlock Text="{}{Giver}" FontSize="10" Foreground="{StaticResource AccentCyan}" FontWeight="Bold"/>
+                                    </Border>
+                                    <Border Background="#1e293b" BorderThickness="1" BorderBrush="{StaticResource AccentPrimary}" CornerRadius="4" Padding="6,3" Margin="0,0,6,6" ToolTip="Inserts their matched person's name (Buying for).">
+                                        <TextBlock Text="{}{Receiver}" FontSize="10" Foreground="#f43f5e" FontWeight="Bold"/>
+                                    </Border>
+                                    <Border Background="#1e293b" BorderThickness="1" BorderBrush="{StaticResource AccentPrimary}" CornerRadius="4" Padding="6,3" Margin="0,0,6,6" ToolTip="Inserts their matched person's wishlist link.">
+                                        <TextBlock Text="{}{Wishlist}" FontSize="10" Foreground="#10b981" FontWeight="Bold"/>
+                                    </Border>
+                                    <Border Background="#1e293b" BorderThickness="1" BorderBrush="{StaticResource AccentPrimary}" CornerRadius="4" Padding="6,3" Margin="0,0,6,6" ToolTip="Inserts the organizer's name.">
+                                        <TextBlock Text="{}{Organizer}" FontSize="10" Foreground="#eab308" FontWeight="Bold"/>
+                                    </Border>
+                                </WrapPanel>
+                            </StackPanel>
+                        </Grid>
+                    </Border>
+
+                    <!-- Realtime HTML / Live View Card -->
+                    <Grid Grid.Column="2">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="10"/>
+                            <RowDefinition Height="*"/>
+                        </Grid.RowDefinitions>
+
+                        <TextBlock Grid.Row="0" Text="Live Sandbox Preview" FontSize="16" FontWeight="Bold"/>
+
+                        <Border Grid.Row="2" Background="#111827" CornerRadius="12" Padding="20" BorderThickness="1" BorderBrush="{StaticResource BorderDark}">
+                            <Grid>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="15"/>
+                                    <RowDefinition Height="*"/>
+                                </Grid.RowDefinitions>
+
+                                <!-- Mock Sender Header -->
+                                <StackPanel Grid.Row="0">
+                                    <TextBlock x:Name="PreviewSubject" Text="Subject: " FontSize="14" FontWeight="Bold" TextWrapping="Wrap" Margin="0,0,0,6" Foreground="{StaticResource TextPrimary}"/>
+                                    <Border BorderThickness="0,0,0,1" BorderBrush="{StaticResource BorderDark}" Padding="0,0,0,10">
+                                        <TextBlock Text="From: Secret Santa Organizer &lt;gmail-smtp@gmail.com&gt;&#x0a;To: John Doe &lt;johndoe@email.com&gt;" FontSize="11" Foreground="{StaticResource TextSecondary}"/>
+                                    </Border>
+                                </StackPanel>
+
+                                <!-- Mock Email Body Viewport -->
+                                <ScrollViewer Grid.Row="2" Margin="0,10,0,0">
+                                    <TextBlock x:Name="PreviewBody" 
+                                               Text="Body text goes here..." 
+                                               TextWrapping="Wrap" 
+                                               FontSize="13" 
+                                               LineHeight="20"
+                                               Foreground="{StaticResource TextPrimary}"/>
+                                </ScrollViewer>
+                            </Grid>
+                        </Border>
+                    </Grid>
+                </Grid>
+            </Grid>
+
+            <!-- 3. TAB: SMTP SETTINGS -->
+            <Grid x:Name="TabSmtpPanel" Visibility="Collapsed">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="20"/>
+                    <RowDefinition Height="*"/>
+                </Grid.RowDefinitions>
+
+                <StackPanel Grid.Row="0">
+                    <TextBlock Text="Gmail SMTP Credentials" FontSize="24" FontWeight="Bold"/>
+                    <TextBlock Text="Configure details to send emails directly via your GMail address. Credentials are saved locally on this machine." Foreground="{StaticResource TextSecondary}" Margin="0,4,0,0" FontSize="13"/>
+                </StackPanel>
+
+                <Grid Grid.Row="2">
+                    <Grid.ColumnDefinitions>
+                        <!-- Inputs Panel -->
+                        <ColumnDefinition Width="420"/>
+                        <!-- Spacer -->
+                        <ColumnDefinition Width="40"/>
+                        <!-- Help / Guidelines Card -->
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+
+                    <!-- Form Card -->
+                    <Border Grid.Column="0" Background="{StaticResource BgCard}" CornerRadius="12" Padding="20" BorderThickness="1" BorderBrush="{StaticResource BorderDark}" VerticalAlignment="Top">
+                        <StackPanel>
+                            <TextBlock Text="SMTP Connection Settings" FontSize="16" FontWeight="Bold" Margin="0,0,0,15"/>
+
+                            <!-- Input: Organizer Name -->
+                            <TextBlock Text="Organizer Name (Display Name)" Style="{StaticResource HeaderLabelStyle}"/>
+                            <TextBox x:Name="InputOrganizerName" Margin="0,0,0,15" ToolTip="Name that appears in the sender line of the email."/>
+
+                            <!-- Input: Sender Email -->
+                            <TextBlock Text="Gmail Address *" Style="{StaticResource HeaderLabelStyle}"/>
+                            <TextBox x:Name="InputSmtpEmail" Margin="0,0,0,15" ToolTip="Your Gmail email address."/>
+
+                            <!-- Input: Gmail App Password -->
+                            <TextBlock Text="Gmail App Password *" Style="{StaticResource HeaderLabelStyle}"/>
+                            <Grid Margin="0,0,0,10">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <!-- Simple PasswordBox for security or simple hidden Textbox. To make it extremely easy to bind and save, we use a custom TextBox with a style or a secure PasswordBox. A standard PasswordBox is much safer. We can bind its content manually or in code behind. -->
+                                <PasswordBox x:Name="InputSmtpPassword" 
+                                             Grid.Column="0"
+                                             Padding="10,8" 
+                                             FontSize="13" 
+                                             Height="36"
+                                             ToolTip="Enter your 16-character Gmail App Password."/>
+                                <!-- Reveal checkbox -->
+                                <Button x:Name="RevealPasswordBtn" Grid.Column="1" Content="👁️" Width="36" Margin="5,0,0,0" Padding="0" Click="RevealPassword_Click" ToolTip="Show/Hide Password"/>
+                            </Grid>
+                            
+                            <!-- Obfuscated input alternative visible when showing password -->
+                            <TextBox x:Name="InputSmtpPasswordVisible" Grid.Row="0" Margin="0,0,0,10" Visibility="Collapsed" Padding="10,8"/>
+
+                            <!-- Save Locally Checkbox -->
+                            <CheckBox x:Name="CheckboxRememberPass" Content="Save credentials locally (Encrypted on disk)" Margin="0,0,0,25" IsChecked="False"/>
+
+                            <!-- Test Buttons Grid -->
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="2*"/>
+                                    <ColumnDefinition Width="3*"/>
+                                </Grid.ColumnDefinitions>
+
+                                <!-- Testing SMTP -->
+                                <Button Grid.Column="0" Content="Test Connection" Click="TestConnection_Click" Padding="10,10" Margin="0,0,8,0" FontWeight="SemiBold"/>
+                                
+                                <!-- Status indicator border -->
+                                <Border Grid.Column="1" x:Name="SmtpStatusBadge" CornerRadius="6" Padding="10,5" Background="#111827" BorderThickness="1" BorderBrush="{StaticResource BorderDark}">
+                                    <TextBlock x:Name="SmtpStatusText" Text="Not Tested" VerticalAlignment="Center" HorizontalAlignment="Center" FontSize="12" FontWeight="SemiBold" Foreground="{StaticResource TextSecondary}"/>
+                                </Border>
+                            </Grid>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Gmail App Password instructions -->
+                    <Border Grid.Column="2" Background="{StaticResource BgCard}" CornerRadius="12" Padding="20" BorderThickness="1" BorderBrush="{StaticResource BorderDark}" VerticalAlignment="Top">
+                        <StackPanel>
+                            <TextBlock Text="🔒 Gmail Configuration Guide" FontSize="16" FontWeight="Bold" Margin="0,0,0,10"/>
+                            <TextBlock Text="Google requires a special 'App Password' to send emails programmatically from desktop tools." FontSize="13" Foreground="{StaticResource TextSecondary}" TextWrapping="Wrap" Margin="0,0,0,15"/>
+
+                            <Border BorderThickness="0,1,0,0" BorderBrush="{StaticResource BorderDark}" Padding="0,12,0,0">
+                                <StackPanel>
+                                    <TextBlock Text="How to generate a Gmail App Password:" FontSize="13" FontWeight="Bold" Foreground="{StaticResource AccentCyan}" Margin="0,0,0,8"/>
+
+                                    <TextBlock Text="1. Go to your Google Account Settings (myaccount.google.com)." FontSize="12" Margin="0,0,0,5" TextWrapping="Wrap"/>
+                                    <TextBlock Text="2. In the left panel, click Security." FontSize="12" Margin="0,0,0,5" TextWrapping="Wrap"/>
+                                    <TextBlock Text="3. Under 'How you sign in to Google', ensure 2-Step Verification is turned ON." FontSize="12" Margin="0,0,0,5" TextWrapping="Wrap" Foreground="{StaticResource WarningBrush}"/>
+                                    <TextBlock Text="4. Click on 2-Step Verification, scroll down to the bottom, and select App passwords." FontSize="12" Margin="0,0,0,5" TextWrapping="Wrap"/>
+                                    <TextBlock Text="5. Enter 'Secret Santa Matcher' as the app name and click Create." FontSize="12" Margin="0,0,0,5" TextWrapping="Wrap"/>
+                                    <TextBlock Text="6. Copy the yellow 16-character password box and paste it directly into this app!" FontSize="12" Margin="0,0,0,15" TextWrapping="Wrap" FontWeight="Bold"/>
+
+                                    <Border Background="#161e2e" BorderThickness="1" BorderBrush="{StaticResource BorderDark}" CornerRadius="6" Padding="12" Margin="0,5,0,0">
+                                        <TextBlock Text="⚠️ Note: Your regular Gmail login password will NOT work. The App Password is a secure, direct credential that can be revoked by you at any time." FontSize="11" Foreground="{StaticResource TextSecondary}" TextWrapping="Wrap"/>
+                                    </Border>
+                                </StackPanel>
+                            </Border>
+                        </StackPanel>
+                    </Border>
+                </Grid>
+            </Grid>
+
+            <!-- 4. TAB: MATCH & SEND -->
+            <Grid x:Name="TabMatchPanel" Visibility="Collapsed">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="20"/>
+                    <RowDefinition Height="*"/>
+                </Grid.RowDefinitions>
+
+                <StackPanel Grid.Row="0">
+                    <TextBlock Text="Exchange Matching Solver" FontSize="24" FontWeight="Bold"/>
+                    <TextBlock Text="Run the Secret Santa matching algorithm. View confirmation statistics and distribute matches via email." Foreground="{StaticResource TextSecondary}" Margin="0,4,0,0" FontSize="13"/>
+                </StackPanel>
+
+                <Grid Grid.Row="2">
+                    <Grid.ColumnDefinitions>
+                        <!-- Left Action Panel -->
+                        <ColumnDefinition Width="450"/>
+                        <!-- Spacer -->
+                        <ColumnDefinition Width="40"/>
+                        <!-- Logs and results panel -->
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+
+                    <!-- Control Panel Card -->
+                    <Border Grid.Column="0" Background="{StaticResource BgCard}" CornerRadius="12" Padding="20" BorderThickness="1" BorderBrush="{StaticResource BorderDark}" VerticalAlignment="Top">
+                        <StackPanel>
+                            <TextBlock Text="Matching Controls" FontSize="16" FontWeight="Bold" Margin="0,0,0,15"/>
+
+                            <!-- Trigger button -->
+                            <Button Style="{StaticResource PrimaryButtonStyle}" 
+                                    Content="🎲 Generate Secret Santa Matching" 
+                                    Click="GenerateMatches_Click" 
+                                    HorizontalAlignment="Stretch"
+                                    Margin="0,0,0,20"/>
+
+                            <!-- Status Board -->
+                            <Border BorderThickness="0,1,0,0" BorderBrush="{StaticResource BorderDark}" Padding="0,15,0,0">
+                                <StackPanel>
+                                    <TextBlock Text="Match Details:" FontSize="13" FontWeight="Bold" Margin="0,0,0,10"/>
+
+                                    <Grid Margin="0,0,0,8">
+                                        <TextBlock Text="Total Givers Joined" Foreground="{StaticResource TextSecondary}"/>
+                                        <TextBlock x:Name="StatusTotalGivers" Text="0 Members" HorizontalAlignment="Right" FontWeight="Bold"/>
+                                    </Grid>
+
+                                    <Grid Margin="0,0,0,8">
+                                        <TextBlock Text="Matching Solver Status" Foreground="{StaticResource TextSecondary}"/>
+                                        <TextBlock x:Name="StatusSolverState" Text="Not Solved" HorizontalAlignment="Right" FontWeight="Bold" Foreground="{StaticResource TextMuted}"/>
+                                    </Grid>
+
+                                    <Grid Margin="0,0,0,15">
+                                        <TextBlock Text="SMTP Configurations" Foreground="{StaticResource TextSecondary}"/>
+                                        <TextBlock x:Name="StatusSmtpState" Text="Unconfigured" HorizontalAlignment="Right" FontWeight="Bold" Foreground="{StaticResource ErrorBrush}"/>
+                                    </Grid>
+
+                                    <!-- Secret Mode Toggle -->
+                                    <CheckBox x:Name="CheckboxRevealMatches" 
+                                              Content="Reveal calculated matches list (Organizer review)" 
+                                              Margin="0,0,0,20" 
+                                              Checked="RevealMatches_Checked" 
+                                              Unchecked="RevealMatches_Unchecked"/>
+
+                                    <!-- Send emails triggering panel -->
+                                    <Button x:Name="SendEmailsBtn" 
+                                            Style="{StaticResource PrimaryButtonStyle}" 
+                                            Background="{StaticResource SuccessBrush}"
+                                            Content="📧 Distribute Match Emails Now" 
+                                            Click="SendEmails_Click" 
+                                            HorizontalAlignment="Stretch"
+                                            IsEnabled="False"
+                                            Height="45"/>
+                                </StackPanel>
+                            </Border>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Realtime Logs / Hidden matches view -->
+                    <Grid Grid.Column="2">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="10"/>
+                            <RowDefinition Height="*"/>
+                        </Grid.RowDefinitions>
+
+                        <TextBlock x:Name="RightPanelTitle" Text="Operation Logs" FontSize="16" FontWeight="Bold" Grid.Row="0"/>
+
+                        <!-- Secret Matches List Panel (revealed only if checked) -->
+                        <Border x:Name="SecretMatchesPanel" Grid.Row="2" Background="{StaticResource BgCard}" CornerRadius="12" Padding="15" BorderThickness="1" BorderBrush="{StaticResource BorderDark}" Visibility="Collapsed">
+                            <ListBox x:Name="MatchesListBox" Background="Transparent" BorderThickness="0">
+                                <ListBox.ItemContainerStyle>
+                                    <Style TargetType="ListBoxItem">
+                                        <Setter Property="Background" Value="Transparent"/>
+                                        <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+                                        <Setter Property="Template">
+                                            <Setter.Value>
+                                                <ControlTemplate TargetType="ListBoxItem">
+                                                    <Border BorderThickness="0,0,0,1" BorderBrush="{StaticResource BorderDark}" Padding="10,8">
+                                                        <ContentPresenter />
+                                                    </Border>
+                                                </ControlTemplate>
+                                            </Setter.Value>
+                                        </Setter>
+                                    </Style>
+                                </ListBox.ItemContainerStyle>
+                                <ListBox.ItemTemplate>
+                                    <DataTemplate>
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="2*"/>
+                                                <ColumnDefinition Width="Auto"/>
+                                                <ColumnDefinition Width="2*"/>
+                                            </Grid.ColumnDefinitions>
+                                            <TextBlock Text="{Binding GiverName}" FontWeight="Bold" FontSize="13" Foreground="{StaticResource AccentCyan}"/>
+                                            <TextBlock Text="👉 buys gift for 👉" Grid.Column="1" FontSize="11" Foreground="{StaticResource TextSecondary}" HorizontalAlignment="Center"/>
+                                            <TextBlock Text="{Binding ReceiverName}" FontWeight="Bold" Grid.Column="2" FontSize="13" Foreground="#f43f5e" HorizontalAlignment="Right"/>
+                                        </Grid>
+                                    </DataTemplate>
+                                </ListBox.ItemTemplate>
+                            </ListBox>
+                        </Border>
+
+                        <!-- Log Console (visible by default) -->
+                        <Border x:Name="LogsPanel" Grid.Row="2" Background="#111827" CornerRadius="12" Padding="15" BorderThickness="1" BorderBrush="{StaticResource BorderDark}" Visibility="Visible">
+                            <Grid>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="*"/>
+                                    <RowDefinition Height="Auto"/>
+                                </Grid.RowDefinitions>
+                                
+                                <ScrollViewer x:Name="LogScrollViewer" Grid.Row="0" VerticalScrollBarVisibility="Auto">
+                                    <TextBox x:Name="LogTextBox" 
+                                             Background="Transparent" 
+                                             BorderThickness="0" 
+                                             Foreground="{StaticResource TextSecondary}" 
+                                             IsReadOnly="True" 
+                                             AcceptsReturn="True" 
+                                             TextWrapping="Wrap" 
+                                             FontSize="11" 
+                                             FontFamily="Consolas"
+                                             Text="[Idle] Add participants, adjust templates, and test SMTP credentials to distribute secret matching emails."/>
+                                </ScrollViewer>
+                                
+                                <!-- Progress bar for sending emails -->
+                                <ProgressBar x:Name="SendProgressBar" Grid.Row="1" Height="10" Margin="0,10,0,0" Minimum="0" Maximum="100" Value="0" Background="#1e293b" Foreground="{StaticResource AccentPrimary}" BorderThickness="0" Visibility="Collapsed"/>
+                            </Grid>
+                        </Border>
+                    </Grid>
+                </Grid>
+            </Grid>
+            
+        </Grid>
+    </Grid>
+</Window>
