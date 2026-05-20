@@ -146,31 +146,46 @@
                         <ColumnDefinition Width="*"/>
                     </Grid.ColumnDefinitions>
 
-                    <!-- Add Participant Form Card -->
-                    <Border Grid.Column="0" Background="{StaticResource BgCard}" CornerRadius="12" Padding="20" VerticalAlignment="Top" BorderThickness="1" BorderBrush="{StaticResource BorderDark}">
-                        <StackPanel>
-                            <TextBlock Text="Add Participant" FontSize="16" FontWeight="Bold" Margin="0,0,0,15"/>
+                    <!-- Add Participant Form Grid (Aligned) -->
+                    <Grid Grid.Column="0">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="10"/>
+                            <RowDefinition Height="*"/>
+                        </Grid.RowDefinitions>
 
-                            <!-- Input: Name -->
-                            <TextBlock Text="Full Name *" Style="{StaticResource HeaderLabelStyle}"/>
-                            <TextBox x:Name="InputName" Margin="0,0,0,12" ToolTip="Enter participant's full name."/>
+                        <TextBlock Grid.Row="0" Text="Add Participant" FontSize="16" FontWeight="Bold" VerticalAlignment="Center"/>
 
-                            <!-- Input: Email -->
-                            <TextBlock Text="Email Address *" Style="{StaticResource HeaderLabelStyle}"/>
-                            <TextBox x:Name="InputEmail" Margin="0,0,0,12" ToolTip="Where their secret match email will be sent."/>
+                        <Border Grid.Row="2" Background="{StaticResource BgCard}" CornerRadius="12" Padding="20" BorderThickness="1" BorderBrush="{StaticResource BorderDark}">
+                            <StackPanel>
+                                <!-- Input: Name -->
+                                <TextBlock Text="Full Name *" Style="{StaticResource HeaderLabelStyle}"/>
+                                <TextBox x:Name="InputName" Margin="0,0,0,12" ToolTip="Enter participant's full name."/>
 
-                            <!-- Input: Wishlist Link -->
-                            <TextBlock Text="Wishlist URL (Optional)" Style="{StaticResource HeaderLabelStyle}"/>
-                            <TextBox x:Name="InputWishlist" Margin="0,0,0,12" ToolTip="Link to Amazon, Elfster, or any website wishlist."/>
+                                <!-- Input: Email -->
+                                <TextBlock Text="Email Address *" Style="{StaticResource HeaderLabelStyle}"/>
+                                <TextBox x:Name="InputEmail" Margin="0,0,0,12" ToolTip="Where their secret match email will be sent."/>
 
-                            <!-- Input: Significant Other -->
-                            <TextBlock Text="Significant Other (Exclusion)" Style="{StaticResource HeaderLabelStyle}"/>
-                            <ComboBox x:Name="InputSO" Margin="0,0,0,20" DisplayMemberPath="Name" SelectedValuePath="Id" ToolTip="Exclude this person from being matched with them (mutual exclusion)."/>
+                                <!-- Input: Wishlist Link -->
+                                <TextBlock Text="Wishlist URL (Optional)" Style="{StaticResource HeaderLabelStyle}"/>
+                                <TextBox x:Name="InputWishlist" Margin="0,0,0,12" ToolTip="Link to Amazon, Elfster, or any website wishlist."/>
 
-                            <!-- Submit Button -->
-                            <Button Style="{StaticResource PrimaryButtonStyle}" Content="Add Exchange Member" Click="AddParticipant_Click" HorizontalAlignment="Stretch"/>
-                        </StackPanel>
-                    </Border>
+                                <!-- Input: Significant Other -->
+                                <TextBlock Text="Significant Other (Exclusion)" Style="{StaticResource HeaderLabelStyle}"/>
+                                <ComboBox x:Name="InputSO" Margin="0,0,0,20" DisplayMemberPath="Name" SelectedValuePath="Id" ToolTip="Exclude this person from being matched with them (mutual exclusion)."/>
+
+                                <!-- Submit and Cancel Buttons -->
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+                                    <Button x:Name="SubmitParticipantBtn" Grid.Column="0" Style="{StaticResource PrimaryButtonStyle}" Content="Add Exchange Member" Click="AddParticipant_Click" HorizontalAlignment="Stretch"/>
+                                    <Button x:Name="CancelEditBtn" Grid.Column="1" Content="Cancel" Click="CancelEdit_Click" Margin="10,0,0,0" Padding="15,10" Visibility="Collapsed"/>
+                                </Grid>
+                            </StackPanel>
+                        </Border>
+                    </Grid>
 
                     <!-- Participants List View -->
                     <Grid Grid.Column="2">
@@ -255,13 +270,20 @@
                                                     </WrapPanel>
                                                 </StackPanel>
 
-                                                <!-- Delete member button -->
-                                                <Button Grid.Column="1" 
-                                                        Content="Delete" 
-                                                        Style="{StaticResource DangerButtonStyle}"
-                                                        Click="DeleteParticipant_Click" 
-                                                        Tag="{Binding Id}"
-                                                        VerticalAlignment="Center"/>
+                                                <!-- Action Buttons panel -->
+                                                <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                                                    <Button Content="Edit" 
+                                                            Click="EditParticipant_Click" 
+                                                            Tag="{Binding Id}" 
+                                                            Margin="0,0,8,0" 
+                                                            Padding="12,5" 
+                                                            FontSize="11"/>
+                                                    <Button Content="Delete" 
+                                                            Style="{StaticResource DangerButtonStyle}"
+                                                            Click="DeleteParticipant_Click" 
+                                                            Tag="{Binding Id}"
+                                                            Padding="12,5"/>
+                                                </StackPanel>
                                             </Grid>
                                         </DataTemplate>
                                     </ListBox.ItemTemplate>
@@ -295,56 +317,62 @@
                         <ColumnDefinition Width="*"/>
                     </Grid.ColumnDefinitions>
 
-                    <!-- Template Form Card -->
-                    <Border Grid.Column="0" Background="{StaticResource BgCard}" CornerRadius="12" Padding="20" BorderThickness="1" BorderBrush="{StaticResource BorderDark}">
-                        <Grid>
-                            <Grid.RowDefinitions>
-                                <RowDefinition Height="Auto"/>
-                                <RowDefinition Height="10"/>
-                                <RowDefinition Height="Auto"/>
-                                <RowDefinition Height="Auto"/>
-                                <RowDefinition Height="10"/>
-                                <RowDefinition Height="Auto"/>
-                                <RowDefinition Height="*"/>
-                                <RowDefinition Height="15"/>
-                                <RowDefinition Height="Auto"/>
-                            </Grid.RowDefinitions>
+                    <!-- Template Form Grid (Aligned) -->
+                    <Grid Grid.Column="0">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="10"/>
+                            <RowDefinition Height="*"/>
+                        </Grid.RowDefinitions>
 
-                            <TextBlock Grid.Row="0" Text="Draft Templates" FontSize="16" FontWeight="Bold"/>
+                        <TextBlock Grid.Row="0" Text="Draft Templates" FontSize="16" FontWeight="Bold" VerticalAlignment="Center"/>
 
-                            <!-- Subject Input -->
-                            <TextBlock Grid.Row="2" Text="Email Subject Line" Style="{StaticResource HeaderLabelStyle}"/>
-                            <TextBox Grid.Row="3" x:Name="TemplateSubject" Margin="0,0,0,15" TextChanged="Template_TextChanged" ToolTip="Subject line of the email."/>
+                        <Border Grid.Row="2" Background="{StaticResource BgCard}" CornerRadius="12" Padding="20" BorderThickness="1" BorderBrush="{StaticResource BorderDark}">
+                            <Grid>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="10"/>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="*"/>
+                                    <RowDefinition Height="15"/>
+                                    <RowDefinition Height="Auto"/>
+                                </Grid.RowDefinitions>
 
-                            <!-- Body Input -->
-                            <TextBlock Grid.Row="5" Text="Email Body Text" Style="{StaticResource HeaderLabelStyle}"/>
-                            <TextBox Grid.Row="6" x:Name="TemplateBody" 
-                                     AcceptsReturn="True" 
-                                     TextWrapping="Wrap" 
-                                     VerticalContentAlignment="Top" 
-                                     TextChanged="Template_TextChanged"
-                                     ToolTip="Write your message here. Templates support both Plain-text and HTML formatting (e.g. &lt;p&gt;, &lt;b&gt;, etc.)"/>
+                                <!-- Subject Input -->
+                                <TextBlock Grid.Row="0" Text="Email Subject Line" Style="{StaticResource HeaderLabelStyle}"/>
+                                <TextBox Grid.Row="1" x:Name="TemplateSubject" Margin="0,0,0,15" TextChanged="Template_TextChanged" ToolTip="Subject line of the email."/>
 
-                            <!-- Dynamic Helper Badges -->
-                            <StackPanel Grid.Row="8">
-                                <TextBlock Text="Placeholder Token Tokens (Clicking values doesn't insert, but write them exactly):" FontSize="11" Foreground="{StaticResource TextSecondary}" Margin="0,0,0,6"/>
-                                <WrapPanel>
-                                    <Border Background="#1e293b" BorderThickness="1" BorderBrush="{StaticResource AccentPrimary}" CornerRadius="4" Padding="6,3" Margin="0,0,6,6" ToolTip="Inserts the giver's full name.">
-                                        <TextBlock Text="{}{Giver}" FontSize="10" Foreground="{StaticResource AccentCyan}" FontWeight="Bold"/>
-                                    </Border>
-                                    <Border Background="#1e293b" BorderThickness="1" BorderBrush="{StaticResource AccentPrimary}" CornerRadius="4" Padding="6,3" Margin="0,0,6,6" ToolTip="Inserts their matched person's name (Buying for).">
-                                        <TextBlock Text="{}{Receiver}" FontSize="10" Foreground="#f43f5e" FontWeight="Bold"/>
-                                    </Border>
-                                    <Border Background="#1e293b" BorderThickness="1" BorderBrush="{StaticResource AccentPrimary}" CornerRadius="4" Padding="6,3" Margin="0,0,6,6" ToolTip="Inserts their matched person's wishlist link.">
-                                        <TextBlock Text="{}{Wishlist}" FontSize="10" Foreground="#10b981" FontWeight="Bold"/>
-                                    </Border>
-                                    <Border Background="#1e293b" BorderThickness="1" BorderBrush="{StaticResource AccentPrimary}" CornerRadius="4" Padding="6,3" Margin="0,0,6,6" ToolTip="Inserts the organizer's name.">
-                                        <TextBlock Text="{}{Organizer}" FontSize="10" Foreground="#eab308" FontWeight="Bold"/>
-                                    </Border>
-                                </WrapPanel>
-                            </StackPanel>
-                        </Grid>
-                    </Border>
+                                <!-- Body Input -->
+                                <TextBlock Grid.Row="3" Text="Email Body Text" Style="{StaticResource HeaderLabelStyle}"/>
+                                <TextBox Grid.Row="4" x:Name="TemplateBody" 
+                                         AcceptsReturn="True" 
+                                         TextWrapping="Wrap" 
+                                         VerticalContentAlignment="Top" 
+                                         TextChanged="Template_TextChanged"
+                                         ToolTip="Write your message here. Templates support both Plain-text and HTML formatting (e.g. &lt;p&gt;, &lt;b&gt;, etc.)"/>
+
+                                <!-- Dynamic Helper Badges -->
+                                <StackPanel Grid.Row="6">
+                                    <TextBlock Text="Placeholder Token Tokens (Clicking values doesn't insert, but write them exactly):" FontSize="11" Foreground="{StaticResource TextSecondary}" Margin="0,0,0,6"/>
+                                    <WrapPanel>
+                                        <Border Background="#1e293b" BorderThickness="1" BorderBrush="{StaticResource AccentPrimary}" CornerRadius="4" Padding="6,3" Margin="0,0,6,6" ToolTip="Inserts the giver's full name.">
+                                            <TextBlock Text="{}{Giver}" FontSize="10" Foreground="{StaticResource AccentCyan}" FontWeight="Bold"/>
+                                        </Border>
+                                        <Border Background="#1e293b" BorderThickness="1" BorderBrush="{StaticResource AccentPrimary}" CornerRadius="4" Padding="6,3" Margin="0,0,6,6" ToolTip="Inserts their matched person's name (Buying for).">
+                                            <TextBlock Text="{}{Receiver}" FontSize="10" Foreground="#f43f5e" FontWeight="Bold"/>
+                                        </Border>
+                                        <Border Background="#1e293b" BorderThickness="1" BorderBrush="{StaticResource AccentPrimary}" CornerRadius="4" Padding="6,3" Margin="0,0,6,6" ToolTip="Inserts their matched person's wishlist link.">
+                                            <TextBlock Text="{}{Wishlist}" FontSize="10" Foreground="#10b981" FontWeight="Bold"/>
+                                        </Border>
+                                        <Border Background="#1e293b" BorderThickness="1" BorderBrush="{StaticResource AccentPrimary}" CornerRadius="4" Padding="6,3" Margin="0,0,6,6" ToolTip="Inserts the organizer's name.">
+                                            <TextBlock Text="{}{Organizer}" FontSize="10" Foreground="#eab308" FontWeight="Bold"/>
+                                        </Border>
+                                    </WrapPanel>
+                                </StackPanel>
+                            </Grid>
+                        </Border>
+                    </Grid>
 
                     <!-- Realtime HTML / Live View Card -->
                     <Grid Grid.Column="2">
@@ -515,58 +543,66 @@
                         <ColumnDefinition Width="*"/>
                     </Grid.ColumnDefinitions>
 
-                    <!-- Control Panel Card -->
-                    <Border Grid.Column="0" Background="{StaticResource BgCard}" CornerRadius="12" Padding="20" BorderThickness="1" BorderBrush="{StaticResource BorderDark}" VerticalAlignment="Top">
-                        <StackPanel>
-                            <TextBlock Text="Matching Controls" FontSize="16" FontWeight="Bold" Margin="0,0,0,15"/>
+                    <!-- Control Panel Grid (Aligned) -->
+                    <Grid Grid.Column="0">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="10"/>
+                            <RowDefinition Height="*"/>
+                        </Grid.RowDefinitions>
 
-                            <!-- Trigger button -->
-                            <Button Style="{StaticResource PrimaryButtonStyle}" 
-                                    Content="🎲 Generate Secret Santa Matching" 
-                                    Click="GenerateMatches_Click" 
-                                    HorizontalAlignment="Stretch"
-                                    Margin="0,0,0,20"/>
+                        <TextBlock Grid.Row="0" Text="Matching Controls" FontSize="16" FontWeight="Bold" VerticalAlignment="Center"/>
 
-                            <!-- Status Board -->
-                            <Border BorderThickness="0,1,0,0" BorderBrush="{StaticResource BorderDark}" Padding="0,15,0,0">
-                                <StackPanel>
-                                    <TextBlock Text="Match Details:" FontSize="13" FontWeight="Bold" Margin="0,0,0,10"/>
+                        <Border Grid.Row="2" Background="{StaticResource BgCard}" CornerRadius="12" Padding="20" BorderThickness="1" BorderBrush="{StaticResource BorderDark}">
+                            <StackPanel>
+                                <!-- Trigger button -->
+                                <Button Style="{StaticResource PrimaryButtonStyle}" 
+                                        Content="🎲 Generate Secret Santa Matching" 
+                                        Click="GenerateMatches_Click" 
+                                        HorizontalAlignment="Stretch"
+                                        Margin="0,0,0,20"/>
 
-                                    <Grid Margin="0,0,0,8">
-                                        <TextBlock Text="Total Givers Joined" Foreground="{StaticResource TextSecondary}"/>
-                                        <TextBlock x:Name="StatusTotalGivers" Text="0 Members" HorizontalAlignment="Right" FontWeight="Bold"/>
-                                    </Grid>
+                                <!-- Status Board -->
+                                <Border BorderThickness="0,1,0,0" BorderBrush="{StaticResource BorderDark}" Padding="0,15,0,0">
+                                    <StackPanel>
+                                        <TextBlock Text="Match Details:" FontSize="13" FontWeight="Bold" Margin="0,0,0,10"/>
 
-                                    <Grid Margin="0,0,0,8">
-                                        <TextBlock Text="Matching Solver Status" Foreground="{StaticResource TextSecondary}"/>
-                                        <TextBlock x:Name="StatusSolverState" Text="Not Solved" HorizontalAlignment="Right" FontWeight="Bold" Foreground="{StaticResource TextMuted}"/>
-                                    </Grid>
+                                        <Grid Margin="0,0,0,8">
+                                            <TextBlock Text="Total Givers Joined" Foreground="{StaticResource TextSecondary}"/>
+                                            <TextBlock x:Name="StatusTotalGivers" Text="0 Members" HorizontalAlignment="Right" FontWeight="Bold"/>
+                                        </Grid>
 
-                                    <Grid Margin="0,0,0,15">
-                                        <TextBlock Text="SMTP Configurations" Foreground="{StaticResource TextSecondary}"/>
-                                        <TextBlock x:Name="StatusSmtpState" Text="Unconfigured" HorizontalAlignment="Right" FontWeight="Bold" Foreground="{StaticResource ErrorBrush}"/>
-                                    </Grid>
+                                        <Grid Margin="0,0,0,8">
+                                            <TextBlock Text="Matching Solver Status" Foreground="{StaticResource TextSecondary}"/>
+                                            <TextBlock x:Name="StatusSolverState" Text="Not Solved" HorizontalAlignment="Right" FontWeight="Bold" Foreground="{StaticResource TextMuted}"/>
+                                        </Grid>
 
-                                    <!-- Secret Mode Toggle -->
-                                    <CheckBox x:Name="CheckboxRevealMatches" 
-                                              Content="Reveal calculated matches list (Organizer review)" 
-                                              Margin="0,0,0,20" 
-                                              Checked="RevealMatches_Checked" 
-                                              Unchecked="RevealMatches_Unchecked"/>
+                                        <Grid Margin="0,0,0,15">
+                                            <TextBlock Text="SMTP Configurations" Foreground="{StaticResource TextSecondary}"/>
+                                            <TextBlock x:Name="StatusSmtpState" Text="Unconfigured" HorizontalAlignment="Right" FontWeight="Bold" Foreground="{StaticResource ErrorBrush}"/>
+                                        </Grid>
 
-                                    <!-- Send emails triggering panel -->
-                                    <Button x:Name="SendEmailsBtn" 
-                                            Style="{StaticResource PrimaryButtonStyle}" 
-                                            Background="{StaticResource SuccessBrush}"
-                                            Content="📧 Distribute Match Emails Now" 
-                                            Click="SendEmails_Click" 
-                                            HorizontalAlignment="Stretch"
-                                            IsEnabled="False"
-                                            Height="45"/>
-                                </StackPanel>
-                            </Border>
-                        </StackPanel>
-                    </Border>
+                                        <!-- Secret Mode Toggle -->
+                                        <CheckBox x:Name="CheckboxRevealMatches" 
+                                                  Content="Reveal calculated matches list (Organizer review)" 
+                                                  Margin="0,0,0,20" 
+                                                  Checked="RevealMatches_Checked" 
+                                                  Unchecked="RevealMatches_Unchecked"/>
+
+                                        <!-- Send emails triggering panel -->
+                                        <Button x:Name="SendEmailsBtn" 
+                                                Style="{StaticResource PrimaryButtonStyle}" 
+                                                Background="{StaticResource SuccessBrush}"
+                                                Content="📧 Distribute Match Emails Now" 
+                                                Click="SendEmails_Click" 
+                                                HorizontalAlignment="Stretch"
+                                                IsEnabled="False"
+                                                Height="45"/>
+                                    </StackPanel>
+                                </Border>
+                            </StackPanel>
+                        </Border>
+                    </Grid>
 
                     <!-- Realtime Logs / Hidden matches view -->
                     <Grid Grid.Column="2">

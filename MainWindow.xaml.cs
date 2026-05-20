@@ -19,6 +19,7 @@ namespace SecretSantaMatcher
         private ObservableCollection<Participant> _participants = new();
         private MatchingResult? _currentMatchingResult;
         private bool _isPasswordRevealed = false;
+        private string? _editingParticipantId = null;
 
         public MainWindow()
         {
@@ -130,9 +131,10 @@ namespace SecretSantaMatcher
 
             // 3. Update the dropdown for Significant Other selection
             var currentSelection = InputSO.SelectedValue;
-            var soCandidates = _participants.ToList();
+            var soCandidates = _participants
+                .Where(p => string.IsNullOrEmpty(_editingParticipantId) || p.Id != _editingParticipantId)
+                .ToList();
             
-            // Can't choose yourself as significant other, so let's handle this in UI or during selection
             InputSO.ItemsSource = null;
             InputSO.ItemsSource = soCandidates;
             InputSO.SelectedValue = currentSelection;
@@ -257,32 +259,54 @@ namespace SecretSantaMatcher
                 wishlist = "https://" + wishlist;
             }
 
-            // Check if email already registered to prevent duplicates
-            if (_participants.Any(p => p.Email.Equals(email, StringComparison.OrdinalIgnoreCase)))
+            // Check if email already registered to prevent duplicates (excluding the current participant being edited)
+            if (_participants.Any(p => (string.IsNullOrEmpty(_editingParticipantId) || p.Id != _editingParticipantId) && p.Email.Equals(email, StringComparison.OrdinalIgnoreCase)))
             {
                 MessageBox.Show("This email address has already been added.", "Duplicate Error", MessageBoxButton.OK, MessageBoxImage.Error);
                 return;
             }
 
-            var newParticipant = new Participant
+            if (!string.IsNullOrEmpty(_editingParticipantId))
             {
-                Name = name,
-                Email = email,
-                WishlistUrl = wishlist,
-                SignificantOtherId = soId
-            };
-
-            // Mutual significant other association
-            if (!string.IsNullOrEmpty(soId))
-            {
-                var other = _participants.FirstOrDefault(p => p.Id == soId);
-                if (other != null)
+                // EDIT MODE
+                var target = _participants.FirstOrDefault(p => p.Id == _editingParticipantId);
+                if (target != null)
                 {
-                    other.SignificantOtherId = newParticipant.Id;
-                }
-            }
+                    target.Name = name;
+                    target.Email = email;
+                    target.WishlistUrl = wishlist;
+                    
+                    // Centralized bidirectional significant other update
+                    UpdateSignificantOtherPairing(target.Id, soId);
 
-            _participants.Add(newParticipant);
+                    Log($"Updated participant: {name}");
+                }
+
+                // Reset Edit Mode State
+                _editingParticipantId = null;
+                SubmitParticipantBtn.Content = "Add Exchange Member";
+                CancelEditBtn.Visibility = Visibility.Collapsed;
+            }
+            else
+            {
+                // ADD MODE
+                var newParticipant = new Participant
+                {
+                    Name = name,
+                    Email = email,
+                    WishlistUrl = wishlist,
+                    SignificantOtherId = string.Empty // Will be set mutually by UpdateSignificantOtherPairing
+                };
+
+                _participants.Add(newParticipant);
+
+                if (!string.IsNullOrEmpty(soId))
+                {
+                    UpdateSignificantOtherPairing(newParticipant.Id, soId);
+                }
+
+                Log($"Added participant: {name}");
+            }
 
             // Reset inputs
             InputName.Text = string.Empty;
@@ -290,12 +314,11 @@ namespace SecretSantaMatcher
             InputWishlist.Text = string.Empty;
             InputSO.SelectedIndex = -1;
 
-            // Invalidate current match if new participants are added
+            // Invalidate current match
             _currentMatchingResult = null;
 
             RefreshParticipantsList();
             AutoSaveCurrentSession();
-            Log($"Added participant: {name}");
         }
 
         private void DeleteParticipant_Click(object sender, RoutedEventArgs e)
@@ -305,15 +328,16 @@ namespace SecretSantaMatcher
                 var target = _participants.FirstOrDefault(p => p.Id == id);
                 if (target != null)
                 {
-                    // Remove mutual significant other pairings
-                    if (!string.IsNullOrEmpty(target.SignificantOtherId))
+                    // If the participant being deleted is currently being edited, cancel edit mode
+                    if (_editingParticipantId == target.Id)
                     {
-                        var other = _participants.FirstOrDefault(p => p.Id == target.SignificantOtherId);
-                        if (other != null)
-                        {
-                            other.SignificantOtherId = string.Empty;
-                        }
+                        _editingParticipantId = null;
+                        SubmitParticipantBtn.Content = "Add Exchange Member";
+                        CancelEditBtn.Visibility = Visibility.Collapsed;
                     }
+
+                    // Centralized cleanup of bidirectional significant other associations
+                    UpdateSignificantOtherPairing(target.Id, string.Empty);
 
                     _participants.Remove(target);
                     _currentMatchingResult = null; // Invalidate match
@@ -330,12 +354,120 @@ namespace SecretSantaMatcher
             var res = MessageBox.Show("Are you sure you want to delete ALL participants?", "Confirm Clear", MessageBoxButton.YesNo, MessageBoxImage.Warning);
             if (res == MessageBoxResult.Yes)
             {
+                _editingParticipantId = null;
+                SubmitParticipantBtn.Content = "Add Exchange Member";
+                CancelEditBtn.Visibility = Visibility.Collapsed;
+
                 _participants.Clear();
                 _currentMatchingResult = null;
                 RefreshParticipantsList();
                 AutoSaveCurrentSession();
                 Log("Cleared all participants.");
             }
+        }
+
+        // ==================== SIGNIFICANT OTHER EXCLUSIONS PAIRING ENGINE ====================
+
+        private void UpdateSignificantOtherPairing(string participantId, string newSoId)
+        {
+            var participant = _participants.FirstOrDefault(p => p.Id == participantId);
+            if (participant == null) return;
+
+            string oldSoId = participant.SignificantOtherId;
+
+            // 1. If the SO didn't change, there's nothing to do
+            if (oldSoId == newSoId) return;
+
+            // 2. Clear old SO's link pointing back to participant
+            if (!string.IsNullOrEmpty(oldSoId))
+            {
+                var oldSo = _participants.FirstOrDefault(p => p.Id == oldSoId);
+                if (oldSo != null && oldSo.SignificantOtherId == participantId)
+                {
+                    oldSo.SignificantOtherId = string.Empty;
+                }
+            }
+
+            // 3. Clear any other participants who might have had participantId as their SO
+            foreach (var p in _participants)
+            {
+                if (p.Id != participantId && p.SignificantOtherId == participantId)
+                {
+                    p.SignificantOtherId = string.Empty;
+                }
+            }
+
+            // 4. Set the new SO on the participant
+            participant.SignificantOtherId = newSoId;
+
+            // 5. Set mutual link on the new SO pointing back to participant
+            if (!string.IsNullOrEmpty(newSoId))
+            {
+                var newSo = _participants.FirstOrDefault(p => p.Id == newSoId);
+                if (newSo != null)
+                {
+                    // If newSo was already linked to someone else, clear that partner's link first
+                    string brandNewSoOldPartnerId = newSo.SignificantOtherId;
+                    if (!string.IsNullOrEmpty(brandNewSoOldPartnerId) && brandNewSoOldPartnerId != participantId)
+                    {
+                        var oldPartnerOfNewSo = _participants.FirstOrDefault(p => p.Id == brandNewSoOldPartnerId);
+                        if (oldPartnerOfNewSo != null)
+                        {
+                            oldPartnerOfNewSo.SignificantOtherId = string.Empty;
+                        }
+                    }
+
+                    newSo.SignificantOtherId = participantId;
+                }
+            }
+        }
+
+        private void EditParticipant_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is Button btn && btn.Tag is string id)
+            {
+                var target = _participants.FirstOrDefault(p => p.Id == id);
+                if (target != null)
+                {
+                    _editingParticipantId = target.Id;
+                    
+                    // Populate form
+                    InputName.Text = target.Name;
+                    InputEmail.Text = target.Email;
+                    InputWishlist.Text = target.WishlistUrl;
+                    
+                    // Refresh dropdown candidates to exclude editing participant
+                    RefreshParticipantsList();
+                    
+                    InputSO.SelectedValue = target.SignificantOtherId;
+
+                    // Toggle form buttons to Edit mode
+                    SubmitParticipantBtn.Content = "Save Changes";
+                    CancelEditBtn.Visibility = Visibility.Visible;
+                    
+                    Log($"Editing participant: {target.Name}");
+                }
+            }
+        }
+
+        private void CancelEdit_Click(object sender, RoutedEventArgs e)
+        {
+            _editingParticipantId = null;
+            
+            // Clear form inputs
+            InputName.Text = string.Empty;
+            InputEmail.Text = string.Empty;
+            InputWishlist.Text = string.Empty;
+            
+            RefreshParticipantsList();
+            
+            InputSO.SelectedIndex = -1;
+
+            // Restore form buttons
+            SubmitParticipantBtn.Content = "Add Exchange Member";
+            CancelEditBtn.Visibility = Visibility.Collapsed;
+            
+            Log("Cancelled editing.");
         }
 
         // ==================== TAB: EMAIL TEMPLATE LOGIC ====================
@@ -632,6 +764,10 @@ namespace SecretSantaMatcher
                 {
                     var session = SessionManager.ImportSession(ofd.FileName);
                     
+                    _editingParticipantId = null;
+                    SubmitParticipantBtn.Content = "Add Exchange Member";
+                    CancelEditBtn.Visibility = Visibility.Collapsed;
+
                     _participants.Clear();
                     foreach (var p in session.Participants)
                     {
