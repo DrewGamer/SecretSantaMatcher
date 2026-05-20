@@ -582,6 +582,12 @@
                                             <TextBlock x:Name="StatusSmtpState" Text="Unconfigured" HorizontalAlignment="Right" FontWeight="Bold" Foreground="{StaticResource ErrorBrush}"/>
                                         </Grid>
 
+                                        <!-- Prevent Mirror Matches Toggle -->
+                                        <CheckBox x:Name="CheckboxPreventMirrors" 
+                                                  Content="Prevent mirror matches (reciprocal pairings)" 
+                                                  Margin="0,0,0,10" 
+                                                  IsChecked="True"/>
+
                                         <!-- Secret Mode Toggle -->
                                         <CheckBox x:Name="CheckboxRevealMatches" 
                                                   Content="Reveal calculated matches list (Organizer review)" 

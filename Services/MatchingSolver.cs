@@ -16,7 +16,7 @@ namespace SecretSantaMatcher.Services
     {
         private static readonly Random _random = new();
 
-        public static MatchingResult GenerateMatches(List<Participant> participants)
+        public static MatchingResult GenerateMatches(List<Participant> participants, bool preventMirrors = false)
         {
             if (participants == null || participants.Count < 2)
             {
@@ -34,7 +34,7 @@ namespace SecretSantaMatcher.Services
             // Dictionary to store the selected match (GiverId -> ReceiverId)
             var matches = new Dictionary<string, string>();
 
-            if (Solve(shuffledGivers, 0, availableReceivers, matches))
+            if (Solve(shuffledGivers, 0, availableReceivers, matches, preventMirrors))
             {
                 return new MatchingResult
                 {
@@ -44,7 +44,7 @@ namespace SecretSantaMatcher.Services
             }
 
             // If we couldn't solve, analyze the bottleneck to give a helpful message
-            string errorDetails = AnalyzeConstraints(participants);
+            string errorDetails = AnalyzeConstraints(participants, preventMirrors);
             return new MatchingResult
             {
                 Success = false,
@@ -56,7 +56,8 @@ namespace SecretSantaMatcher.Services
             List<Participant> givers, 
             int giverIndex, 
             List<Participant> availableReceivers, 
-            Dictionary<string, string> matches)
+            Dictionary<string, string> matches,
+            bool preventMirrors)
         {
             // Base case: All givers matched successfully
             if (giverIndex >= givers.Count)
@@ -82,12 +83,16 @@ namespace SecretSantaMatcher.Services
                 if (!string.IsNullOrEmpty(receiver.SignificantOtherId) && giver.Id == receiver.SignificantOtherId)
                     continue;
 
+                // 3. Prevent mirror matches (reciprocal pairings: A buys for B, and B buys for A)
+                if (preventMirrors && matches.TryGetValue(receiver.Id, out var directReceiver) && directReceiver == giver.Id)
+                    continue;
+
                 // Attempt to assign
                 matches[giver.Id] = receiver.Id;
                 availableReceivers.Remove(receiver);
 
                 // Recurse to next giver
-                if (Solve(givers, giverIndex + 1, availableReceivers, matches))
+                if (Solve(givers, giverIndex + 1, availableReceivers, matches, preventMirrors))
                 {
                     return true;
                 }
@@ -100,7 +105,7 @@ namespace SecretSantaMatcher.Services
             return false;
         }
 
-        private static string AnalyzeConstraints(List<Participant> participants)
+        private static string AnalyzeConstraints(List<Participant> participants, bool preventMirrors)
         {
             int total = participants.Count;
             if (total < 2)
@@ -132,7 +137,13 @@ namespace SecretSantaMatcher.Services
             }
 
             // General bottleneck analysis
-            return "This usually happens when too many participants have mutual 'significant other' exclusions relative to the small size of the group, leaving no mathematical permutations where everyone is assigned a valid secret recipient.";
+            string detail = "This usually happens when too many participants have mutual 'significant other' exclusions";
+            if (preventMirrors)
+            {
+                detail += " or mirror match prevention constraints";
+            }
+            detail += " relative to the small size of the group, leaving no mathematical permutations where everyone is assigned a valid secret recipient.";
+            return detail;
         }
     }
 }
