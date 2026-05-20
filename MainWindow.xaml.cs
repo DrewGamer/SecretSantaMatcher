@@ -78,6 +78,7 @@ namespace SecretSantaMatcher
 
                 TemplateSubject.Text = session.EmailSubject;
                 TemplateBody.Text = session.EmailBody;
+                CheckboxPreventMirrors.IsChecked = session.PreventMirrors;
 
                 RefreshParticipantsList();
                 UpdateStatusBoard();
@@ -112,7 +113,8 @@ namespace SecretSantaMatcher
                 EmailSubject = TemplateSubject.Text,
                 EmailBody = TemplateBody.Text,
                 RememberPassword = CheckboxRememberPass.IsChecked == true,
-                SavedPassword = _isPasswordRevealed ? InputSmtpPasswordVisible.Text : InputSmtpPassword.Password
+                SavedPassword = _isPasswordRevealed ? InputSmtpPasswordVisible.Text : InputSmtpPassword.Password,
+                PreventMirrors = CheckboxPreventMirrors.IsChecked == true
             };
         }
 
@@ -569,7 +571,8 @@ namespace SecretSantaMatcher
                 return;
             }
 
-            var result = MatchingSolver.GenerateMatches(_participants.ToList());
+            bool preventMirrors = CheckboxPreventMirrors.IsChecked == true;
+            var result = MatchingSolver.GenerateMatches(_participants.ToList(), preventMirrors);
             _currentMatchingResult = result;
 
             if (result.Success)
@@ -781,6 +784,7 @@ namespace SecretSantaMatcher
 
                     TemplateSubject.Text = session.EmailSubject;
                     TemplateBody.Text = session.EmailBody;
+                    CheckboxPreventMirrors.IsChecked = session.PreventMirrors;
 
                     _currentMatchingResult = null; // Reset matching state on new import
 

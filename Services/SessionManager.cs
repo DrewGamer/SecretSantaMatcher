@@ -16,6 +16,7 @@ namespace SecretSantaMatcher.Services
         public string EmailBody { get; set; } = string.Empty;
         public string SavedPassword { get; set; } = string.Empty; // Obfuscated
         public bool RememberPassword { get; set; } = false;
+        public bool PreventMirrors { get; set; } = true;
     }
 
     public static class SessionManager
@@ -51,7 +52,8 @@ namespace SecretSantaMatcher.Services
                     SenderEmail = data.SenderEmail,
                     EmailSubject = data.EmailSubject,
                     EmailBody = data.EmailBody,
-                    RememberPassword = data.RememberPassword
+                    RememberPassword = data.RememberPassword,
+                    PreventMirrors = data.PreventMirrors
                 };
 
                 if (data.RememberPassword && !string.IsNullOrEmpty(data.SavedPassword))
@@ -115,7 +117,8 @@ namespace SecretSantaMatcher.Services
                 EmailSubject = data.EmailSubject,
                 EmailBody = data.EmailBody,
                 RememberPassword = false, // Do not export password details for security
-                SavedPassword = string.Empty
+                SavedPassword = string.Empty,
+                PreventMirrors = data.PreventMirrors
             };
 
             string json = JsonSerializer.Serialize(saveData, JsonOptions);
@@ -153,7 +156,8 @@ namespace SecretSantaMatcher.Services
                 OrganizerName = "",
                 SenderEmail = "",
                 SavedPassword = "",
-                RememberPassword = false
+                RememberPassword = false,
+                PreventMirrors = true
             };
         }
 
