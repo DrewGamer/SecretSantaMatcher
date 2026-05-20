@@ -8,7 +8,6 @@ A WPF desktop application for coordinating Secret Santa gift exchanges. The appl
 
 - **Backtracking Solver**: Uses a recursive backtracking search to generate valid gift-giving circles that respect participant exclusions.
 - **Mirror Match Prevention**: Optional setting to exclude reciprocal matches (where A buys for B and B buys for A) to increase variety.
-- **Slate Dark UI**: A dark-themed layout with aligned input fields and tabbed navigation.
 - **Live Email Template Preview**: Renders a live preview of the drafted email subject and body as you type, using template tokens.
 - **Gmail SMTP Integration**: Automatically sends individual matches via Gmail using Google App Passwords. Includes progress tracking and runtime logs.
 - **Session Auto-Save**: Saves your session locally on exit. Supports importing and exporting configurations via JSON.
