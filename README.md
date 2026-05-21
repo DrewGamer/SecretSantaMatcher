@@ -80,3 +80,22 @@ The compiled standalone executable will be generated at:
 - **Password Obfuscation**: The Gmail App Password is obfuscated locally on disk using a symmetric XOR key.
 - **Safe Exports**: Session exports to JSON automatically strip SMTP passwords to prevent credential leaks.
 - **Local Processing**: All data and match calculations remain strictly on your local machine.
+
+---
+
+## AI Agent Guidelines
+
+This project is built using specialized, domain-isolated development subagents. In future conversations, the AI assistant will automatically discover and use these agents for all development tasks.
+
+Please refer to the profiles and boundaries defined in the .agents directory:
+- **UiUxAgent**: Handles WPF XAML presentation, layouts, grids, visual styles, and themes. Managed files: MainWindow.xaml, App.xaml, resource dictionaries.
+- **BackendLogicAgent**: Handles C# core algorithms, solvers, models, state data structure updates, local saving, JSON configurations, and serializations. Managed files: Services/*, Models/*, MainWindow.xaml.cs.
+- **TestingAgent**: Handles unit testing, boundary condition verification, mock validation, and UI integration test scripts. Managed files: tests/*, test reports, and verification plans.
+
+All agents collaborate under strict boundaries. UI/UX Agent does not modify core algorithms, Backend Agent does not modify visual styling, and the Testing Agent verifies changes without modifying production code.
+
+### Git Branching Strategy for AI Agents
+To keep the main branch clean and protect production stability, all agents must adhere to the following Git workflow:
+1. **Never Work on Main**: Agents must never commit directly to the main branch or leave modified files in the working directory of the main branch.
+2. **Descriptive Feature Branches**: At the start of any development task, the agent must immediately create and switch to a descriptive feature branch prefixed with `feature/` or `bugfix/` (for example, `feature/multiple-exclusions`).
+3. **Stage and Commit**: When all changes are complete and verified by the test suite, the agent must stage and commit the changes cleanly to the feature branch before concluding the turn.

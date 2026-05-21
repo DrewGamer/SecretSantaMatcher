@@ -33,3 +33,4 @@ The primary assistant will read the respective `.md` profile, programmatically c
 To prevent conflict and code regressions, the agents adhere to these strict boundary rules:
 1. **No Shared Overwrite**: The UI/UX Agent never touches C# solver/network code, and the Backend Agent never touches XAML grids/styles.
 2. **Contract-First State**: If a backend logic update requires a new UI element, the Backend Agent outlines the model bindings first, then coordinates with the UI/UX Agent to implement the visual XAML.
+3. **Strict Branch Isolation**: Agents must never perform work or leave uncommitted modifications directly on the main branch. A descriptive branch prefixed with `feature/` or `bugfix/` must be checked out at the beginning of the development cycle, and all work staged and committed there.
