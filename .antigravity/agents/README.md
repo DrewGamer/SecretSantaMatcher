@@ -6,16 +6,17 @@ By delegating tasks to these specialized agents, you maintain high code quality,
 
 ---
 
-## 👥 Meet Your Specialized Team
+## Meet Your Specialized Team
 
 | Agent Profile | Role / Focus | Primary Files Managed |
 | :--- | :--- | :--- |
-| 🎨 [UI/UX Agent](ui_ux_agent.md) | Presentation, visual design, responsiveness, grids, themes, and micro-animations. | `MainWindow.xaml`, `App.xaml`, resource dictionaries. |
-| ⚙️ [Backend & Logic Agent](backend_logic_agent.md) | Math solvers, data structures, local saving, JSON configurations, cryptography, and SMTP networking. | `Services/*`, `Models/*`, `MainWindow.xaml.cs`. |
+| [UI/UX Agent](ui_ux_agent.md) | Presentation, visual design, responsiveness, grids, themes, and micro-animations. | `MainWindow.xaml`, `App.xaml`, resource dictionaries. |
+| [Backend & Logic Agent](backend_logic_agent.md) | Math solvers, data structures, local saving, JSON configurations, cryptography, and SMTP networking. | `Services/*`, `Models/*`, `MainWindow.xaml.cs`. |
+| [Testing Agent](testing_agent.md) | Verification scripts, unit tests, bounds checking, data templates integrity, and user flow UI automation. | `tests/*` (proposed), test reports, and verification plans. |
 
 ---
 
-## 🚀 How to Launch These Agents
+## How to Launch These Agents
 
 When you want to kick off a new feature or optimization, you can ask your primary assistant to launch one of these agents.
 
@@ -27,7 +28,7 @@ The primary assistant will read the respective `.md` profile, programmatically c
 
 ---
 
-## 🤝 Collaborative Rules of Engagement
+## Collaborative Rules of Engagement
 
 To prevent conflict and code regressions, the agents adhere to these strict boundary rules:
 1. **No Shared Overwrite**: The UI/UX Agent never touches C# solver/network code, and the Backend Agent never touches XAML grids/styles.
