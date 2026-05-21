@@ -17,6 +17,7 @@ namespace SecretSantaMatcher
     public partial class MainWindow : Window
     {
         private ObservableCollection<Participant> _participants = new();
+        private ObservableCollection<string> _formExclusions = new();
         private MatchingResult? _currentMatchingResult;
         private bool _isPasswordRevealed = false;
         private string? _editingParticipantId = null;
@@ -28,6 +29,9 @@ namespace SecretSantaMatcher
             // Register events
             this.Loaded += MainWindow_Loaded;
             this.Closing += MainWindow_Closing;
+
+            // Bind exclusion items source
+            FormExclusionsList.ItemsSource = _formExclusions;
         }
 
         private void MainWindow_Loaded(object sender, RoutedEventArgs e)
@@ -50,12 +54,54 @@ namespace SecretSantaMatcher
 
         // ==================== SESSION DATA PERSISTENCE ====================
 
+        private void MigrateLegacySignificantOthers(List<Participant> participants)
+        {
+            if (participants == null) return;
+
+            foreach (var p in participants)
+            {
+                if (p.ExcludedParticipantIds == null)
+                {
+                    p.ExcludedParticipantIds = new List<string>();
+                }
+            }
+
+            foreach (var p in participants)
+            {
+                if (!string.IsNullOrEmpty(p.SignificantOtherId))
+                {
+                    if (p.ExcludedParticipantIds.Count == 0)
+                    {
+                        if (!p.ExcludedParticipantIds.Contains(p.SignificantOtherId))
+                        {
+                            p.ExcludedParticipantIds.Add(p.SignificantOtherId);
+                        }
+
+                        var other = participants.FirstOrDefault(x => x.Id == p.SignificantOtherId);
+                        if (other != null)
+                        {
+                            if (other.ExcludedParticipantIds == null)
+                            {
+                                other.ExcludedParticipantIds = new List<string>();
+                            }
+                            if (!other.ExcludedParticipantIds.Contains(p.Id))
+                            {
+                                other.ExcludedParticipantIds.Add(p.Id);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
         private void LoadSavedSession()
         {
             try
             {
                 var session = SessionManager.LoadSession();
                 
+                MigrateLegacySignificantOthers(session.Participants);
+
                 _participants.Clear();
                 foreach (var p in session.Participants)
                 {
@@ -131,15 +177,23 @@ namespace SecretSantaMatcher
             ParticipantsList.ItemsSource = null;
             ParticipantsList.ItemsSource = _participants;
 
-            // 3. Update the dropdown for Significant Other selection
+            // 3. Update the dropdown for Exclusion selection
             var currentSelection = InputSO.SelectedValue;
-            var soCandidates = _participants
-                .Where(p => string.IsNullOrEmpty(_editingParticipantId) || p.Id != _editingParticipantId)
+            var exclusionsCandidates = _participants
+                .Where(p => (string.IsNullOrEmpty(_editingParticipantId) || p.Id != _editingParticipantId)
+                            && !_formExclusions.Contains(p.Id))
                 .ToList();
             
             InputSO.ItemsSource = null;
-            InputSO.ItemsSource = soCandidates;
-            InputSO.SelectedValue = currentSelection;
+            InputSO.ItemsSource = exclusionsCandidates;
+            if (currentSelection != null && exclusionsCandidates.Any(c => c.Id == (string)currentSelection))
+            {
+                InputSO.SelectedValue = currentSelection;
+            }
+            else
+            {
+                InputSO.SelectedIndex = -1;
+            }
 
             // 4. Update empty state visibility
             EmptyStatePanel.Visibility = _participants.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
@@ -277,9 +331,8 @@ namespace SecretSantaMatcher
                     target.Name = name;
                     target.Email = email;
                     target.WishlistUrl = wishlist;
-                    
-                    // Centralized bidirectional significant other update
-                    UpdateSignificantOtherPairing(target.Id, soId);
+                    target.ExcludedParticipantIds = _formExclusions.ToList();
+                    target.SignificantOtherId = target.ExcludedParticipantIds.FirstOrDefault() ?? string.Empty;
 
                     Log($"Updated participant: {name}");
                 }
@@ -297,15 +350,11 @@ namespace SecretSantaMatcher
                     Name = name,
                     Email = email,
                     WishlistUrl = wishlist,
-                    SignificantOtherId = string.Empty // Will be set mutually by UpdateSignificantOtherPairing
+                    ExcludedParticipantIds = _formExclusions.ToList(),
+                    SignificantOtherId = _formExclusions.FirstOrDefault() ?? string.Empty
                 };
 
                 _participants.Add(newParticipant);
-
-                if (!string.IsNullOrEmpty(soId))
-                {
-                    UpdateSignificantOtherPairing(newParticipant.Id, soId);
-                }
 
                 Log($"Added participant: {name}");
             }
@@ -315,6 +364,7 @@ namespace SecretSantaMatcher
             InputEmail.Text = string.Empty;
             InputWishlist.Text = string.Empty;
             InputSO.SelectedIndex = -1;
+            _formExclusions.Clear();
 
             // Invalidate current match
             _currentMatchingResult = null;
@@ -338,8 +388,18 @@ namespace SecretSantaMatcher
                         CancelEditBtn.Visibility = Visibility.Collapsed;
                     }
 
-                    // Centralized cleanup of bidirectional significant other associations
-                    UpdateSignificantOtherPairing(target.Id, string.Empty);
+                    // Cleanup this participant from all other participants' exclusions lists
+                    foreach (var p in _participants)
+                    {
+                        if (p.ExcludedParticipantIds != null && p.ExcludedParticipantIds.Contains(target.Id))
+                        {
+                            p.ExcludedParticipantIds.Remove(target.Id);
+                            if (p.SignificantOtherId == target.Id)
+                            {
+                                p.SignificantOtherId = p.ExcludedParticipantIds.FirstOrDefault() ?? string.Empty;
+                            }
+                        }
+                    }
 
                     _participants.Remove(target);
                     _currentMatchingResult = null; // Invalidate match
@@ -368,59 +428,41 @@ namespace SecretSantaMatcher
             }
         }
 
-        // ==================== SIGNIFICANT OTHER EXCLUSIONS PAIRING ENGINE ====================
 
-        private void UpdateSignificantOtherPairing(string participantId, string newSoId)
+
+        private void AddFormExclusion_Click(object sender, RoutedEventArgs e)
         {
-            var participant = _participants.FirstOrDefault(p => p.Id == participantId);
-            if (participant == null) return;
-
-            string oldSoId = participant.SignificantOtherId;
-
-            // 1. If the SO didn't change, there's nothing to do
-            if (oldSoId == newSoId) return;
-
-            // 2. Clear old SO's link pointing back to participant
-            if (!string.IsNullOrEmpty(oldSoId))
+            if (InputSO.SelectedValue is string selectedId && !string.IsNullOrEmpty(selectedId))
             {
-                var oldSo = _participants.FirstOrDefault(p => p.Id == oldSoId);
-                if (oldSo != null && oldSo.SignificantOtherId == participantId)
+                // Verify we are not excluding ourselves
+                if (!string.IsNullOrEmpty(_editingParticipantId) && selectedId == _editingParticipantId)
                 {
-                    oldSo.SignificantOtherId = string.Empty;
+                    MessageBox.Show("A participant cannot be excluded from matching with themselves.", "Invalid Exclusion", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    return;
                 }
+
+                if (_formExclusions.Contains(selectedId))
+                {
+                    MessageBox.Show("This participant is already excluded.", "Duplicate Exclusion", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    return;
+                }
+
+                _formExclusions.Add(selectedId);
+                InputSO.SelectedIndex = -1;
+                RefreshParticipantsList();
             }
-
-            // 3. Clear any other participants who might have had participantId as their SO
-            foreach (var p in _participants)
+            else
             {
-                if (p.Id != participantId && p.SignificantOtherId == participantId)
-                {
-                    p.SignificantOtherId = string.Empty;
-                }
+                MessageBox.Show("Please select a participant to exclude.", "No Selection", MessageBoxButton.OK, MessageBoxImage.Information);
             }
+        }
 
-            // 4. Set the new SO on the participant
-            participant.SignificantOtherId = newSoId;
-
-            // 5. Set mutual link on the new SO pointing back to participant
-            if (!string.IsNullOrEmpty(newSoId))
+        private void RemoveFormExclusion_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is Button btn && btn.Tag is string targetId)
             {
-                var newSo = _participants.FirstOrDefault(p => p.Id == newSoId);
-                if (newSo != null)
-                {
-                    // If newSo was already linked to someone else, clear that partner's link first
-                    string brandNewSoOldPartnerId = newSo.SignificantOtherId;
-                    if (!string.IsNullOrEmpty(brandNewSoOldPartnerId) && brandNewSoOldPartnerId != participantId)
-                    {
-                        var oldPartnerOfNewSo = _participants.FirstOrDefault(p => p.Id == brandNewSoOldPartnerId);
-                        if (oldPartnerOfNewSo != null)
-                        {
-                            oldPartnerOfNewSo.SignificantOtherId = string.Empty;
-                        }
-                    }
-
-                    newSo.SignificantOtherId = participantId;
-                }
+                _formExclusions.Remove(targetId);
+                RefreshParticipantsList();
             }
         }
 
@@ -438,10 +480,19 @@ namespace SecretSantaMatcher
                     InputEmail.Text = target.Email;
                     InputWishlist.Text = target.WishlistUrl;
                     
+                    _formExclusions.Clear();
+                    if (target.ExcludedParticipantIds != null)
+                    {
+                        foreach (var excludeId in target.ExcludedParticipantIds)
+                        {
+                            _formExclusions.Add(excludeId);
+                        }
+                    }
+
                     // Refresh dropdown candidates to exclude editing participant
                     RefreshParticipantsList();
                     
-                    InputSO.SelectedValue = target.SignificantOtherId;
+                    InputSO.SelectedIndex = -1;
 
                     // Toggle form buttons to Edit mode
                     SubmitParticipantBtn.Content = "Save Changes";
@@ -460,7 +511,8 @@ namespace SecretSantaMatcher
             InputName.Text = string.Empty;
             InputEmail.Text = string.Empty;
             InputWishlist.Text = string.Empty;
-            
+            _formExclusions.Clear();
+
             RefreshParticipantsList();
             
             InputSO.SelectedIndex = -1;
@@ -770,6 +822,8 @@ namespace SecretSantaMatcher
                     _editingParticipantId = null;
                     SubmitParticipantBtn.Content = "Add Exchange Member";
                     CancelEditBtn.Visibility = Visibility.Collapsed;
+
+                    MigrateLegacySignificantOthers(session.Participants);
 
                     _participants.Clear();
                     foreach (var p in session.Participants)
