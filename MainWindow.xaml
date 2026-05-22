@@ -229,22 +229,19 @@
                                 </ListBox>
 
                                 <Grid Margin="0,0,0,20">
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="*"/>
-                                        <ColumnDefinition Width="Auto"/>
-                                    </Grid.ColumnDefinitions>
-                                    <ComboBox x:Name="InputSO" 
-                                              DisplayMemberPath="Name" 
-                                              SelectedValuePath="Id" 
-                                              ToolTip="Select a participant to exclude from matches." 
-                                              VerticalAlignment="Center"/>
-                                    <Button Grid.Column="1" 
-                                            Content="Add" 
-                                            Click="AddFormExclusion_Click" 
-                                            Margin="8,0,0,0" 
-                                            Padding="15,8" 
-                                            VerticalAlignment="Center"/>
-                                </Grid>
+                                     <ComboBox x:Name="InputSO" 
+                                               Style="{StaticResource SearchComboBoxStyle}"
+                                               IsEditable="True"
+                                               StaysOpenOnEdit="True"
+                                               IsTextSearchEnabled="False"
+                                               TextBoxBase.TextChanged="InputSO_TextChanged"
+                                               PreviewKeyDown="InputSO_PreviewKeyDown"
+                                               SelectionChanged="InputSO_SelectionChanged"
+                                               DisplayMemberPath="Name" 
+                                               SelectedValuePath="Id" 
+                                               ToolTip="Type to search and select or press Enter to add an exclusion." 
+                                               VerticalAlignment="Center"/>
+                                 </Grid>
 
                                 <!-- Submit and Cancel Buttons -->
                                 <Grid>

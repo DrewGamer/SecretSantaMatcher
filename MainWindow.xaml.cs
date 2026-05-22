@@ -7,6 +7,7 @@ using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Input;
 using System.Windows.Media;
 using Microsoft.Win32;
 using SecretSantaMatcher.Models;
@@ -193,6 +194,7 @@ namespace SecretSantaMatcher
             else
             {
                 InputSO.SelectedIndex = -1;
+                InputSO.Text = string.Empty;
             }
 
             // 4. Update empty state visibility
@@ -430,9 +432,134 @@ namespace SecretSantaMatcher
 
 
 
-        private void AddFormExclusion_Click(object sender, RoutedEventArgs e)
+        private bool _isFilteringExclusions = false;
+
+        private void InputSO_TextChanged(object sender, TextChangedEventArgs e)
         {
-            if (InputSO.SelectedValue is string selectedId && !string.IsNullOrEmpty(selectedId))
+            if (_isFilteringExclusions) return;
+            if (sender is ComboBox cb && cb.IsKeyboardFocusWithin)
+            {
+                _isFilteringExclusions = true;
+                try
+                {
+                    var tb = cb.Template.FindName("PART_EditableTextBox", cb) as TextBox;
+                    if (tb != null)
+                    {
+                        string filterText = cb.Text;
+                        int caretIndex = tb.CaretIndex;
+
+                        // Reset selection programmatically if it doesn't match the typed text
+                        if (cb.SelectedIndex != -1 && cb.SelectedItem is Participant selectedItem)
+                        {
+                            if (!string.Equals(selectedItem.Name, filterText, StringComparison.OrdinalIgnoreCase))
+                            {
+                                cb.SelectedIndex = -1;
+                                cb.Text = filterText;
+                                tb.CaretIndex = caretIndex;
+                            }
+                        }
+
+                        if (cb.SelectedIndex == -1)
+                        {
+                            var candidates = _participants
+                                .Where(p => (string.IsNullOrEmpty(_editingParticipantId) || p.Id != _editingParticipantId)
+                                            && !_formExclusions.Contains(p.Id));
+
+                            if (!string.IsNullOrWhiteSpace(filterText))
+                            {
+                                candidates = candidates.Where(p => p.Name.Contains(filterText, StringComparison.OrdinalIgnoreCase));
+                            }
+
+                            var list = candidates.ToList();
+                            cb.ItemsSource = list;
+
+                            cb.Text = filterText;
+
+                            if (list.Any() && !string.IsNullOrEmpty(filterText))
+                            {
+                                cb.IsDropDownOpen = true;
+                            }
+                        }
+
+                        // Defer setting selection and caret position to run after WPF layout pass
+                        Dispatcher.BeginInvoke(new Action(() =>
+                        {
+                            var tbEditable = cb.Template.FindName("PART_EditableTextBox", cb) as TextBox;
+                            if (tbEditable != null)
+                            {
+                                if (cb.SelectedIndex != -1)
+                                {
+                                    tbEditable.SelectionStart = tbEditable.Text.Length;
+                                }
+                                else
+                                {
+                                    tbEditable.SelectionStart = caretIndex;
+                                }
+                                tbEditable.SelectionLength = 0;
+                            }
+                        }), System.Windows.Threading.DispatcherPriority.Background);
+                    }
+                }
+                finally
+                {
+                    _isFilteringExclusions = false;
+                }
+            }
+        }
+
+        private void InputSO_PreviewKeyDown(object sender, KeyEventArgs e)
+        {
+            if (e.Key == Key.Enter)
+            {
+                e.Handled = true;
+                AddExclusionFromInput();
+            }
+        }
+
+        private void InputSO_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (_isFilteringExclusions) return;
+            if (sender is ComboBox cb && cb.IsKeyboardFocusWithin)
+            {
+                // If an item is selected and the user is NOT actively scrolling via keyboard arrow keys,
+                // then this selection was triggered by a mouse click or a committed selection!
+                if (cb.SelectedIndex != -1 && 
+                    !Keyboard.IsKeyDown(Key.Down) && 
+                    !Keyboard.IsKeyDown(Key.Up) && 
+                    !Keyboard.IsKeyDown(Key.PageDown) && 
+                    !Keyboard.IsKeyDown(Key.PageUp))
+                {
+                    // Defer the invocation slightly to allow selection state to settle
+                    Dispatcher.BeginInvoke(new Action(() =>
+                    {
+                        AddExclusionFromInput();
+                    }), System.Windows.Threading.DispatcherPriority.Background);
+                }
+            }
+        }
+
+        private void AddExclusionFromInput()
+        {
+            string? selectedId = null;
+            if (InputSO.SelectedValue is string id && !string.IsNullOrEmpty(id) && InputSO.SelectedItem is Participant selectedItem && string.Equals(selectedItem.Name, InputSO.Text.Trim(), StringComparison.OrdinalIgnoreCase))
+            {
+                selectedId = id;
+            }
+            else if (!string.IsNullOrWhiteSpace(InputSO.Text))
+            {
+                // Try to find a candidate whose name matches the typed text exactly (case-insensitive)
+                var matched = _participants
+                    .Where(p => (string.IsNullOrEmpty(_editingParticipantId) || p.Id != _editingParticipantId)
+                                && !_formExclusions.Contains(p.Id))
+                    .FirstOrDefault(p => string.Equals(p.Name, InputSO.Text.Trim(), StringComparison.OrdinalIgnoreCase));
+                
+                if (matched != null)
+                {
+                    selectedId = matched.Id;
+                }
+            }
+
+            if (!string.IsNullOrEmpty(selectedId))
             {
                 // Verify we are not excluding ourselves
                 if (!string.IsNullOrEmpty(_editingParticipantId) && selectedId == _editingParticipantId)
@@ -448,12 +575,13 @@ namespace SecretSantaMatcher
                 }
 
                 _formExclusions.Add(selectedId);
+                InputSO.Text = string.Empty;
                 InputSO.SelectedIndex = -1;
                 RefreshParticipantsList();
             }
             else
             {
-                MessageBox.Show("Please select a participant to exclude.", "No Selection", MessageBoxButton.OK, MessageBoxImage.Information);
+                MessageBox.Show("Please select or type a valid participant name to exclude.", "No Match Found", MessageBoxButton.OK, MessageBoxImage.Information);
             }
         }
 
