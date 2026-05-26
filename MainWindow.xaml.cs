@@ -23,6 +23,8 @@ namespace SecretSantaMatcher
         private bool _isPasswordRevealed = false;
         private string? _editingParticipantId = null;
 
+        internal Func<string, string, MessageBoxButton, MessageBoxImage, MessageBoxResult> MessageBoxShowHandler { get; set; } = MessageBox.Show;
+
         public MainWindow()
         {
             InitializeComponent();
@@ -382,6 +384,12 @@ namespace SecretSantaMatcher
                 var target = _participants.FirstOrDefault(p => p.Id == id);
                 if (target != null)
                 {
+                    var res = MessageBoxShowHandler($"Are you sure you want to remove '{target.Name}' from the participant list?", "Confirm Delete", MessageBoxButton.YesNo, MessageBoxImage.Question);
+                    if (res != MessageBoxResult.Yes)
+                    {
+                        return;
+                    }
+
                     // If the participant being deleted is currently being edited, cancel edit mode
                     if (_editingParticipantId == target.Id)
                     {
@@ -415,7 +423,7 @@ namespace SecretSantaMatcher
 
         private void ClearAllParticipants_Click(object sender, RoutedEventArgs e)
         {
-            var res = MessageBox.Show("Are you sure you want to delete ALL participants?", "Confirm Clear", MessageBoxButton.YesNo, MessageBoxImage.Warning);
+            var res = MessageBoxShowHandler("Are you sure you want to delete ALL participants?", "Confirm Clear", MessageBoxButton.YesNo, MessageBoxImage.Warning);
             if (res == MessageBoxResult.Yes)
             {
                 _editingParticipantId = null;

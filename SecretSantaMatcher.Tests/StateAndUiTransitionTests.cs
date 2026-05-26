@@ -114,6 +114,16 @@ namespace SecretSantaMatcher.Tests
             return (T)field.GetValue(window)!;
         }
 
+        private void SetMessageBoxShowHandler(MainWindow window, Func<string, string, MessageBoxButton, MessageBoxImage, MessageBoxResult> handler)
+        {
+            var prop = typeof(MainWindow).GetProperty("MessageBoxShowHandler", BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Public);
+            if (prop == null)
+            {
+                throw new InvalidOperationException("Could not find property 'MessageBoxShowHandler' in MainWindow.");
+            }
+            prop.SetValue(window, handler);
+        }
+
         private void InvokePrivateMethod(MainWindow window, string methodName, params object[] args)
         {
             var method = typeof(MainWindow).GetMethod(methodName, BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Public);
@@ -226,7 +236,8 @@ namespace SecretSantaMatcher.Tests
                 bob.ExcludedParticipantIds.Add(alice.Id);
                 bob.SignificantOtherId = alice.Id;
 
-                // 2. Act: Delete Bob
+                // 2. Act: Delete Bob with confirmation
+                SetMessageBoxShowHandler(window, (msg, title, buttons, icon) => MessageBoxResult.Yes);
                 var deleteBtn = new Button { Tag = bob.Id };
                 InvokePrivateMethod(window, "DeleteParticipant_Click", deleteBtn, new RoutedEventArgs());
 
@@ -237,6 +248,131 @@ namespace SecretSantaMatcher.Tests
                 Assert.DoesNotContain(bob.Id, alice.ExcludedParticipantIds);
                 Assert.NotEqual(bob.Id, alice.SignificantOtherId);
                 Assert.Equal(string.Empty, alice.SignificantOtherId);
+            });
+        }
+
+        [Fact]
+        public void DeleteParticipant_WithConfirmationYes_ShouldDeleteParticipant()
+        {
+            using var backup = new SessionBackupFixture();
+            RunInSTA(() =>
+            {
+                // Arrange
+                var window = new MainWindow();
+                var inputName = GetPrivateField<TextBox>(window, "InputName");
+                var inputEmail = GetPrivateField<TextBox>(window, "InputEmail");
+                var participants = GetPrivateField<ObservableCollection<Participant>>(window, "_participants");
+
+                inputName.Text = "Charlie";
+                inputEmail.Text = "charlie@example.com";
+                InvokePrivateMethod(window, "AddParticipant_Click", new Button(), new RoutedEventArgs());
+
+                Assert.Single(participants);
+                var charlie = participants.First();
+
+                SetMessageBoxShowHandler(window, (msg, title, buttons, icon) => MessageBoxResult.Yes);
+                var deleteBtn = new Button { Tag = charlie.Id };
+
+                // Act
+                InvokePrivateMethod(window, "DeleteParticipant_Click", deleteBtn, new RoutedEventArgs());
+
+                // Assert
+                Assert.Empty(participants);
+            });
+        }
+
+        [Fact]
+        public void DeleteParticipant_WithConfirmationNo_ShouldNotDeleteParticipant()
+        {
+            using var backup = new SessionBackupFixture();
+            RunInSTA(() =>
+            {
+                // Arrange
+                var window = new MainWindow();
+                var inputName = GetPrivateField<TextBox>(window, "InputName");
+                var inputEmail = GetPrivateField<TextBox>(window, "InputEmail");
+                var participants = GetPrivateField<ObservableCollection<Participant>>(window, "_participants");
+
+                inputName.Text = "Charlie";
+                inputEmail.Text = "charlie@example.com";
+                InvokePrivateMethod(window, "AddParticipant_Click", new Button(), new RoutedEventArgs());
+
+                Assert.Single(participants);
+                var charlie = participants.First();
+
+                SetMessageBoxShowHandler(window, (msg, title, buttons, icon) => MessageBoxResult.No);
+                var deleteBtn = new Button { Tag = charlie.Id };
+
+                // Act
+                InvokePrivateMethod(window, "DeleteParticipant_Click", deleteBtn, new RoutedEventArgs());
+
+                // Assert
+                Assert.Single(participants);
+                Assert.Contains(participants, x => x.Id == charlie.Id);
+            });
+        }
+
+        [Fact]
+        public void ClearAllParticipants_WithConfirmationYes_ShouldClearAllParticipants()
+        {
+            using var backup = new SessionBackupFixture();
+            RunInSTA(() =>
+            {
+                // Arrange
+                var window = new MainWindow();
+                var inputName = GetPrivateField<TextBox>(window, "InputName");
+                var inputEmail = GetPrivateField<TextBox>(window, "InputEmail");
+                var participants = GetPrivateField<ObservableCollection<Participant>>(window, "_participants");
+
+                inputName.Text = "Alice";
+                inputEmail.Text = "alice@example.com";
+                InvokePrivateMethod(window, "AddParticipant_Click", new Button(), new RoutedEventArgs());
+
+                inputName.Text = "Bob";
+                inputEmail.Text = "bob@example.com";
+                InvokePrivateMethod(window, "AddParticipant_Click", new Button(), new RoutedEventArgs());
+
+                Assert.Equal(2, participants.Count);
+
+                SetMessageBoxShowHandler(window, (msg, title, buttons, icon) => MessageBoxResult.Yes);
+
+                // Act
+                InvokePrivateMethod(window, "ClearAllParticipants_Click", new Button(), new RoutedEventArgs());
+
+                // Assert
+                Assert.Empty(participants);
+            });
+        }
+
+        [Fact]
+        public void ClearAllParticipants_WithConfirmationNo_ShouldNotClearAllParticipants()
+        {
+            using var backup = new SessionBackupFixture();
+            RunInSTA(() =>
+            {
+                // Arrange
+                var window = new MainWindow();
+                var inputName = GetPrivateField<TextBox>(window, "InputName");
+                var inputEmail = GetPrivateField<TextBox>(window, "InputEmail");
+                var participants = GetPrivateField<ObservableCollection<Participant>>(window, "_participants");
+
+                inputName.Text = "Alice";
+                inputEmail.Text = "alice@example.com";
+                InvokePrivateMethod(window, "AddParticipant_Click", new Button(), new RoutedEventArgs());
+
+                inputName.Text = "Bob";
+                inputEmail.Text = "bob@example.com";
+                InvokePrivateMethod(window, "AddParticipant_Click", new Button(), new RoutedEventArgs());
+
+                Assert.Equal(2, participants.Count);
+
+                SetMessageBoxShowHandler(window, (msg, title, buttons, icon) => MessageBoxResult.No);
+
+                // Act
+                InvokePrivateMethod(window, "ClearAllParticipants_Click", new Button(), new RoutedEventArgs());
+
+                // Assert
+                Assert.Equal(2, participants.Count);
             });
         }
 
