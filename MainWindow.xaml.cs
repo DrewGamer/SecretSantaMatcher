@@ -22,6 +22,7 @@ namespace SecretSantaMatcher
         private MatchingResult? _currentMatchingResult;
         private bool _isPasswordRevealed = false;
         private string? _editingParticipantId = null;
+        private TextBox? _lastFocusedTemplateTextBox = null;
 
         internal Func<string, string, MessageBoxButton, MessageBoxImage, MessageBoxResult> MessageBoxShowHandler { get; set; } = MessageBox.Show;
 
@@ -717,6 +718,65 @@ namespace SecretSantaMatcher
             // Make beautiful rendered placeholders in live sandbox
             PreviewSubject.Text = "Subject: " + EmailSender.ReplaceTokens(subjectTmpl, organizer, "Jane Giver", "John Doe", "https://amazon.com/wishlist/johndoe");
             PreviewBody.Text = EmailSender.ReplaceTokens(bodyTmpl, organizer, "Jane Giver", "John Doe", "https://amazon.com/wishlist/johndoe");
+        }
+
+        private void TemplateTextBox_GotFocus(object sender, RoutedEventArgs e)
+        {
+            if (sender is TextBox tb)
+            {
+                _lastFocusedTemplateTextBox = tb;
+            }
+        }
+
+        private void TokenButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is Button btn && btn.Content is string token)
+            {
+                InsertToken(token);
+            }
+        }
+
+        private void InsertToken(string token)
+        {
+            TextBox? target = null;
+            
+            // Check current keyboard focus first
+            if (FocusManager.GetFocusedElement(this) is TextBox tb && 
+                (tb == TemplateSubject || tb == TemplateBody))
+            {
+                target = tb;
+            }
+            else if (_lastFocusedTemplateTextBox == TemplateSubject || _lastFocusedTemplateTextBox == TemplateBody)
+            {
+                target = _lastFocusedTemplateTextBox;
+            }
+            
+            bool defaulted = false;
+            if (target == null)
+            {
+                target = TemplateBody;
+                defaulted = true;
+            }
+            
+            target.Focus();
+            int insertIndex = defaulted ? target.Text.Length : target.SelectionStart;
+            
+            string currentText = target.Text;
+            string newText = currentText.Insert(insertIndex, token);
+            target.Text = newText;
+            
+            target.SelectionStart = insertIndex + token.Length;
+            target.SelectionLength = 0;
+            
+            if (defaulted)
+            {
+                Log($"Inserted {token} at the end of the email body.");
+            }
+            else
+            {
+                string boxName = target == TemplateSubject ? "Subject" : "Body";
+                Log($"Inserted {token} into the email {boxName} at cursor position.");
+            }
         }
 
         // ==================== TAB: GMAIL CONFIG LOGIC ====================
