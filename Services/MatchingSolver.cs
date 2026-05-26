@@ -77,10 +77,8 @@ namespace SecretSantaMatcher.Services
                 if (receiver.Id == giver.Id)
                     continue;
 
-                // 2. Cannot buy for significant other (check both directions for robustness)
-                if (!string.IsNullOrEmpty(giver.SignificantOtherId) && receiver.Id == giver.SignificantOtherId)
-                    continue;
-                if (!string.IsNullOrEmpty(receiver.SignificantOtherId) && giver.Id == receiver.SignificantOtherId)
+                // 2. Directed exclusions check
+                if (giver.ExcludedParticipantIds != null && giver.ExcludedParticipantIds.Contains(receiver.Id))
                     continue;
 
                 // 3. Prevent mirror matches (reciprocal pairings: A buys for B, and B buys for A)
@@ -113,36 +111,60 @@ namespace SecretSantaMatcher.Services
                 return "You need at least 2 participants.";
             }
 
-            // Count significant other pairs
-            int coupleCount = 0;
-            var processed = new HashSet<string>();
+            // Check if any participant has excluded all other (total - 1) members
+            var giversExcludingAll = new List<Participant>();
             foreach (var p in participants)
             {
-                if (!string.IsNullOrEmpty(p.SignificantOtherId) && !processed.Contains(p.Id))
+                var otherIds = new HashSet<string>(participants.Where(x => x.Id != p.Id).Select(x => x.Id));
+                var actualExclusions = p.ExcludedParticipantIds != null 
+                    ? p.ExcludedParticipantIds.Intersect(otherIds).Count() 
+                    : 0;
+
+                if (actualExclusions >= total - 1)
                 {
-                    processed.Add(p.Id);
-                    processed.Add(p.SignificantOtherId);
-                    coupleCount++;
+                    giversExcludingAll.Add(p);
                 }
             }
 
-            if (total == 2 && coupleCount > 0)
+            // Check if any participant is excluded by all other (total - 1) members
+            var receiversExcludedByAll = new List<Participant>();
+            foreach (var p in participants)
             {
-                return "With only 2 participants who are significant others, it is mathematically impossible to match them because both would have to buy for their significant other.";
+                int exclusionCount = 0;
+                foreach (var other in participants)
+                {
+                    if (other.Id == p.Id) continue;
+                    if (other.ExcludedParticipantIds != null && other.ExcludedParticipantIds.Contains(p.Id))
+                    {
+                        exclusionCount++;
+                    }
+                }
+
+                if (exclusionCount >= total - 1)
+                {
+                    receiversExcludedByAll.Add(p);
+                }
             }
 
-            if (coupleCount * 2 > total - 1)
+            if (giversExcludingAll.Any())
             {
-                return $"You have {coupleCount} pairs of significant others out of {total} total participants. There are too many constraints relative to the group size to make a complete, secret circle.";
+                string names = string.Join(", ", giversExcludingAll.Select(p => $"'{p.DisplayName}'"));
+                return $"Deadlock detected: Participant(s) {names} excluded all other possible recipients, leaving them with no one to buy a gift for.";
             }
 
-            // General bottleneck analysis
-            string detail = "This usually happens when too many participants have mutual 'significant other' exclusions";
+            if (receiversExcludedByAll.Any())
+            {
+                string names = string.Join(", ", receiversExcludedByAll.Select(p => $"'{p.DisplayName}'"));
+                return $"Deadlock detected: Participant(s) {names} are excluded by all other participants, leaving them with no possible secret givers.";
+            }
+
+            // Fallback: cyclic deadlock or general bottleneck description
+            string detail = "This usually happens when too many participants have exclusion constraints";
             if (preventMirrors)
             {
                 detail += " or mirror match prevention constraints";
             }
-            detail += " relative to the small size of the group, leaving no mathematical permutations where everyone is assigned a valid secret recipient.";
+            detail += " relative to the small size of the group, leaving no mathematical permutations where everyone is assigned a valid secret recipient (e.g., a cyclic exclusion deadlock).";
             return detail;
         }
     }

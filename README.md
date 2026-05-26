@@ -7,11 +7,12 @@ A WPF desktop application for coordinating Secret Santa gift exchanges. The appl
 ## Features
 
 - **Backtracking Solver**: Uses a recursive backtracking search to generate valid gift-giving circles that respect participant exclusions.
+- **Asymmetric Directed Exclusions**: Allows participants to hold multiple directed exclusions (for example, A cannot buy for B, and B cannot buy for C) to support complex relational constraints.
 - **Mirror Match Prevention**: Optional setting to exclude reciprocal matches (where A buys for B and B buys for A) to increase variety.
 - **Live Email Template Preview**: Renders a live preview of the drafted email subject and body as you type, using template tokens.
 - **Gmail SMTP Integration**: Automatically sends individual matches via Gmail using Google App Passwords. Includes progress tracking and runtime logs.
-- **Session Auto-Save**: Saves your session locally on exit. Supports importing and exporting configurations via JSON.
-- **Bidirectional Exclusions Management**: Adding, editing, or deleting a participant dynamically updates mutual significant other links to keep the solver's state consistent.
+- **Session Auto-Save & Legacy Migration**: Saves your session locally on exit. Supports importing and exporting configurations via JSON. Automatically migrates legacy mutual significant-other configurations to bidirectional directed exclusions upon loading.
+- **Dynamic Exclusions Management**: Real-time validation removes existing exclusions and the participant itself from available selection candidates. Deleting a participant automatically sweeps and removes their reference from all other exclusion lists to maintain state consistency.
 
 ---
 
@@ -49,8 +50,9 @@ The compiled standalone executable will be generated at:
 ### 1. Manage Participants
 - Go to the **Manage Participants** tab.
 - Enter a participant's Name, Email, and optionally a Wishlist URL.
-- **Exclusions**: Use the **Significant Other** dropdown to pair couples or partners who should not buy for each other. Setting B as A's partner automatically updates B to link back to A.
-- Edit or delete participants directly. Deletions and edits automatically clean up mutual exclusions.
+- **Exclusions**: Use the **Exclusions Manager** panel to add multiple directed exclusions. Select another participant from the dropdown and click Add. You can remove existing exclusions by clicking the Remove button next to their name.
+- **Directed Behavior**: These exclusions prevent the current participant from buying for the selected recipient. They are asymmetric (directed) by default, meaning that excluding B for participant A does not automatically exclude A for participant B unless explicitly added.
+- **Auto-Cleanup**: Editing or deleting participants automatically sweeps all exclusion lists in the session and removes references to the affected participant to keep data clean.
 
 ### 2. Customize Email Template
 - Go to the **Email Template** tab.

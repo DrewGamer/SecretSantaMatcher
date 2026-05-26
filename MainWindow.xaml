@@ -170,9 +170,79 @@
                                 <TextBlock Text="Wishlist URL (Optional)" Style="{StaticResource HeaderLabelStyle}"/>
                                 <TextBox x:Name="InputWishlist" Margin="0,0,0,12" ToolTip="Link to Amazon, Elfster, or any website wishlist."/>
 
-                                <!-- Input: Significant Other -->
-                                <TextBlock Text="Significant Other (Exclusion)" Style="{StaticResource HeaderLabelStyle}"/>
-                                <ComboBox x:Name="InputSO" Margin="0,0,0,20" DisplayMemberPath="Name" SelectedValuePath="Id" ToolTip="Exclude this person from being matched with them (mutual exclusion)."/>
+                                <!-- Input: Exclusions -->
+                                <TextBlock Text="Exclusions (Cannot match with)" Style="{StaticResource HeaderLabelStyle}"/>
+                                <ListBox x:Name="FormExclusionsList" 
+                                         Background="{StaticResource BgInput}" 
+                                         BorderBrush="{StaticResource BorderDark}" 
+                                         BorderThickness="1" 
+                                         Height="85" 
+                                         Margin="0,0,0,8" 
+                                         ScrollViewer.VerticalScrollBarVisibility="Auto" 
+                                         ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+                                    <ListBox.ItemContainerStyle>
+                                        <Style TargetType="ListBoxItem">
+                                            <Setter Property="Background" Value="Transparent"/>
+                                            <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+                                            <Setter Property="Padding" Value="0"/>
+                                            <Setter Property="Template">
+                                                <Setter.Value>
+                                                    <ControlTemplate TargetType="ListBoxItem">
+                                                        <Border Margin="2,2,2,2" 
+                                                                Padding="8,4" 
+                                                                Background="#161e2e" 
+                                                                BorderThickness="1" 
+                                                                BorderBrush="{StaticResource BorderDark}" 
+                                                                CornerRadius="4">
+                                                            <ContentPresenter />
+                                                        </Border>
+                                                    </ControlTemplate>
+                                                </Setter.Value>
+                                            </Setter>
+                                        </Style>
+                                    </ListBox.ItemContainerStyle>
+                                    <ListBox.ItemTemplate>
+                                        <DataTemplate>
+                                            <Grid>
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="*"/>
+                                                    <ColumnDefinition Width="Auto"/>
+                                                </Grid.ColumnDefinitions>
+                                                <TextBlock Text="{Binding Converter={x:Static local:Converters.SoNameConverter}}" 
+                                                           VerticalAlignment="Center" 
+                                                           Foreground="{StaticResource TextPrimary}" 
+                                                           FontSize="12"/>
+                                                <Button Grid.Column="1" 
+                                                        Content="❌" 
+                                                        Click="RemoveFormExclusion_Click" 
+                                                        Tag="{Binding}" 
+                                                        Background="Transparent" 
+                                                        BorderThickness="0" 
+                                                        Padding="4,2" 
+                                                        FontSize="10" 
+                                                        Foreground="{StaticResource ErrorBrush}" 
+                                                        Cursor="Hand" 
+                                                        VerticalAlignment="Center"/>
+                                            </Grid>
+                                        </DataTemplate>
+                                    </ListBox.ItemTemplate>
+                                </ListBox>
+
+                                <Grid Margin="0,0,0,20">
+                                     <ComboBox x:Name="InputSO" 
+                                               Style="{StaticResource SearchComboBoxStyle}"
+                                               IsEditable="True"
+                                               StaysOpenOnEdit="True"
+                                               IsTextSearchEnabled="False"
+                                               TextBoxBase.TextChanged="InputSO_TextChanged"
+                                               PreviewKeyDown="InputSO_PreviewKeyDown"
+                                               SelectionChanged="InputSO_SelectionChanged"
+                                               DropDownClosed="InputSO_DropDownClosed"
+                                               DisplayMemberPath="Name" 
+                                               SelectedValuePath="Id" 
+                                               ToolTip="Type to search and select or press Enter to add an exclusion." 
+                                               VerticalAlignment="Center"/>
+                                 </Grid>
 
                                 <!-- Submit and Cancel Buttons -->
                                 <Grid>
@@ -260,13 +330,33 @@
                                                             </StackPanel>
                                                         </Border>
                                                         
-                                                        <!-- Significant Other Badge -->
-                                                        <Border Background="#1c1917" BorderThickness="1" BorderBrush="#78716c" CornerRadius="4" Padding="5,2" Visibility="{Binding SignificantOtherId, Converter={x:Static local:Converters.VisibilityConverter}}">
-                                                            <StackPanel Orientation="Horizontal">
-                                                                <TextBlock Text="❤️ Excluded: " FontSize="10" Foreground="{StaticResource TextSecondary}"/>
-                                                                <TextBlock x:Name="SOText" Text="{Binding SignificantOtherId, Converter={x:Static local:Converters.SoNameConverter}}" FontSize="10" Foreground="#f43f5e" FontWeight="Bold"/>
-                                                            </StackPanel>
-                                                        </Border>
+                                                        <!-- Exclusions Badges -->
+                                                        <ItemsControl ItemsSource="{Binding ExcludedParticipantIds}">
+                                                            <ItemsControl.ItemsPanel>
+                                                                <ItemsPanelTemplate>
+                                                                    <WrapPanel Orientation="Horizontal"/>
+                                                                </ItemsPanelTemplate>
+                                                            </ItemsControl.ItemsPanel>
+                                                            <ItemsControl.ItemTemplate>
+                                                                <DataTemplate>
+                                                                    <Border Background="#1c1917" 
+                                                                            BorderThickness="1" 
+                                                                            BorderBrush="#78716c" 
+                                                                            CornerRadius="4" 
+                                                                            Padding="5,2" 
+                                                                            Margin="0,0,6,6"
+                                                                            VerticalAlignment="Center">
+                                                                        <StackPanel Orientation="Horizontal">
+                                                                            <TextBlock Text="🚫 " FontSize="10" Foreground="{StaticResource TextSecondary}"/>
+                                                                            <TextBlock Text="{Binding Converter={x:Static local:Converters.SoNameConverter}}" 
+                                                                                       FontSize="10" 
+                                                                                       Foreground="#f43f5e" 
+                                                                                       FontWeight="Bold"/>
+                                                                        </StackPanel>
+                                                                    </Border>
+                                                                </DataTemplate>
+                                                            </ItemsControl.ItemTemplate>
+                                                        </ItemsControl>
                                                     </WrapPanel>
                                                 </StackPanel>
 

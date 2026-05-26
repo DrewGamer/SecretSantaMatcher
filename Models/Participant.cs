@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Text.Json.Serialization;
 
 namespace SecretSantaMatcher.Models
@@ -13,9 +14,13 @@ namespace SecretSantaMatcher.Models
         // Stores the Id of another participant who is their significant other (to prevent matching them)
         public string SignificantOtherId { get; set; } = string.Empty;
 
+        // Stores lists of excluded receiver IDs
+        public List<string> ExcludedParticipantIds { get; set; } = new();
+
         [JsonIgnore]
         public string DisplayName => string.IsNullOrWhiteSpace(Name) ? "New Participant" : Name;
 
         public override string ToString() => Name;
     }
 }
+
