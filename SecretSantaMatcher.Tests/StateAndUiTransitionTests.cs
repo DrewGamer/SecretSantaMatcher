@@ -7,6 +7,7 @@ using System.Text.Json;
 using System.Windows;
 using System.Windows.Controls;
 using System.Collections.ObjectModel;
+using System.Windows.Input;
 using Xunit;
 using SecretSantaMatcher.Models;
 using SecretSantaMatcher.Services;
@@ -280,6 +281,208 @@ namespace SecretSantaMatcher.Tests
                 }
                 catch { }
             }
+        }
+
+        [Fact]
+        public void AddExclusionFromInput_WithValidTypedName_AddsExclusionAndClearsInputs()
+        {
+            using var backup = new SessionBackupFixture();
+            RunInSTA(() =>
+            {
+                // Arrange
+                var window = new MainWindow();
+                var participants = GetPrivateField<ObservableCollection<Participant>>(window, "_participants");
+                var formExclusions = GetPrivateField<ObservableCollection<string>>(window, "_formExclusions");
+                var inputSO = GetPrivateField<ComboBox>(window, "InputSO");
+
+                var bob = new Participant { Name = "Bob", Email = "bob@example.com" };
+                var charlie = new Participant { Name = "Charlie", Email = "charlie@example.com" };
+                
+                participants.Add(bob);
+                participants.Add(charlie);
+
+                // Populate InputSO.ItemsSource by calling RefreshParticipantsList
+                InvokePrivateMethod(window, "RefreshParticipantsList");
+
+                // Simulate typing "bob" (case-insensitive) exactly into the ComboBox Text
+                inputSO.SelectedIndex = -1;
+                inputSO.Text = "bob";
+
+                // Act
+                InvokePrivateMethod(window, "AddExclusionFromInput");
+
+                // Assert
+                Assert.Contains(bob.Id, formExclusions);
+                Assert.DoesNotContain(charlie.Id, formExclusions);
+                Assert.Equal(-1, inputSO.SelectedIndex);
+                Assert.Equal(string.Empty, inputSO.Text);
+            });
+        }
+
+        [Fact]
+        public void AddExclusionFromInput_WithPartialTypedName_FallsBackToFirstMatchAndClearsInputs()
+        {
+            using var backup = new SessionBackupFixture();
+            RunInSTA(() =>
+            {
+                // Arrange
+                var window = new MainWindow();
+                var participants = GetPrivateField<ObservableCollection<Participant>>(window, "_participants");
+                var formExclusions = GetPrivateField<ObservableCollection<string>>(window, "_formExclusions");
+                var inputSO = GetPrivateField<ComboBox>(window, "InputSO");
+
+                var bob = new Participant { Name = "Bob", Email = "bob@example.com" };
+                var charlie = new Participant { Name = "Charlie", Email = "charlie@example.com" };
+                
+                participants.Add(bob);
+                participants.Add(charlie);
+
+                // Populate InputSO.ItemsSource
+                InvokePrivateMethod(window, "RefreshParticipantsList");
+
+                // Simulate typing "Ch" (partial/prefix) into the ComboBox Text
+                inputSO.SelectedIndex = -1;
+                inputSO.Text = "Ch";
+
+                // Act
+                InvokePrivateMethod(window, "AddExclusionFromInput");
+
+                // Assert
+                Assert.Contains(charlie.Id, formExclusions);
+                Assert.DoesNotContain(bob.Id, formExclusions);
+                Assert.Equal(-1, inputSO.SelectedIndex);
+                Assert.Equal(string.Empty, inputSO.Text);
+            });
+        }
+
+        [System.Runtime.InteropServices.DllImport("user32.dll")]
+        private static extern bool SetKeyboardState(byte[] lpKeyState);
+
+        private void SimulateKeyDown(Key key, bool isDown)
+        {
+            byte[] keyState = new byte[256];
+            int virtualKey = KeyInterop.VirtualKeyFromKey(key);
+            keyState[virtualKey] = isDown ? (byte)0x80 : (byte)0;
+            SetKeyboardState(keyState);
+        }
+
+        [Fact]
+        public void InputSO_TextChanged_WhenNavigationKeyDown_BypassesSelectionResetting()
+        {
+            using var backup = new SessionBackupFixture();
+            RunInSTA(() =>
+            {
+                // Arrange
+                var window = new MainWindow();
+                window.Show(); // Ensure template is applied and controls are focusable
+
+                var participants = GetPrivateField<ObservableCollection<Participant>>(window, "_participants");
+                var inputSO = GetPrivateField<ComboBox>(window, "InputSO");
+
+                var charlie = new Participant { Name = "Charlie", Email = "charlie@example.com" };
+                participants.Add(charlie);
+
+                // Populate InputSO ItemsSource
+                InvokePrivateMethod(window, "RefreshParticipantsList");
+
+                // Ensure the ComboBox has keyboard focus so it processes the text changed handler
+                inputSO.Focus();
+
+                // 1. Verification WITHOUT Navigation Key (Control case):
+                // Select Charlie in the ComboBox, simulate TextChanged, and verify it resets SelectedIndex to -1.
+                inputSO.SelectedItem = charlie;
+                var expectedIndex = inputSO.SelectedIndex;
+                Assert.NotEqual(-1, expectedIndex);
+
+                inputSO.Text = "Char";
+                InvokePrivateMethod(window, "InputSO_TextChanged", inputSO, new TextChangedEventArgs(TextBox.TextChangedEvent, UndoAction.None));
+
+                Assert.Equal(-1, inputSO.SelectedIndex);
+
+                // 2. Verification WITH Navigation Key (Test case):
+                // Reset the candidate list, re-select Charlie, simulate Key.Down as pressed, and verify SelectedIndex is NOT reset.
+                InvokePrivateMethod(window, "RefreshParticipantsList");
+                inputSO.SelectedItem = charlie;
+                expectedIndex = inputSO.SelectedIndex;
+                Assert.NotEqual(-1, expectedIndex);
+
+                SimulateKeyDown(Key.Down, true);
+                try
+                {
+                    inputSO.Text = "Char";
+                    InvokePrivateMethod(window, "InputSO_TextChanged", inputSO, new TextChangedEventArgs(TextBox.TextChangedEvent, UndoAction.None));
+
+                    // Assert: SelectedIndex must NOT be reset to -1 because Key.Down was pressed
+                    Assert.Equal(expectedIndex, inputSO.SelectedIndex);
+                    Assert.Equal(charlie, inputSO.SelectedItem);
+                }
+                finally
+                {
+                    // Clean up the keyboard state so it doesn't affect other tests
+                    SimulateKeyDown(Key.Down, false);
+                }
+            });
+        }
+
+        [Fact]
+        public void InputSO_DropDownClosed_WhenSelectedIndexNotMinusOne_InvokesAddExclusionFromInput()
+        {
+            using var backup = new SessionBackupFixture();
+            RunInSTA(() =>
+            {
+                // Arrange
+                var window = new MainWindow();
+                var participants = GetPrivateField<ObservableCollection<Participant>>(window, "_participants");
+                var formExclusions = GetPrivateField<ObservableCollection<string>>(window, "_formExclusions");
+                var inputSO = GetPrivateField<ComboBox>(window, "InputSO");
+
+                var bob = new Participant { Name = "Bob", Email = "bob@example.com" };
+                participants.Add(bob);
+
+                // Populate InputSO.ItemsSource
+                InvokePrivateMethod(window, "RefreshParticipantsList");
+
+                // Set selection to Bob
+                inputSO.SelectedItem = bob;
+                Assert.NotEqual(-1, inputSO.SelectedIndex);
+
+                // Act - call the event handler
+                InvokePrivateMethod(window, "InputSO_DropDownClosed", inputSO, EventArgs.Empty);
+
+                // Assert: Bob's ID is added to the exclusions list
+                Assert.Contains(bob.Id, formExclusions);
+                Assert.Equal(-1, inputSO.SelectedIndex);
+                Assert.Equal(string.Empty, inputSO.Text);
+            });
+        }
+
+        [Fact]
+        public void InputSO_DropDownClosed_WhenSelectedIndexIsMinusOne_DoesNotInvokeAddExclusionFromInput()
+        {
+            using var backup = new SessionBackupFixture();
+            RunInSTA(() =>
+            {
+                // Arrange
+                var window = new MainWindow();
+                var participants = GetPrivateField<ObservableCollection<Participant>>(window, "_participants");
+                var formExclusions = GetPrivateField<ObservableCollection<string>>(window, "_formExclusions");
+                var inputSO = GetPrivateField<ComboBox>(window, "InputSO");
+
+                var bob = new Participant { Name = "Bob", Email = "bob@example.com" };
+                participants.Add(bob);
+
+                // Populate InputSO.ItemsSource
+                InvokePrivateMethod(window, "RefreshParticipantsList");
+
+                // Ensure SelectedIndex is -1
+                inputSO.SelectedIndex = -1;
+
+                // Act - call the event handler
+                InvokePrivateMethod(window, "InputSO_DropDownClosed", inputSO, EventArgs.Empty);
+
+                // Assert: Bob's ID is NOT added to the exclusions list, since it was bypassed
+                Assert.Empty(formExclusions);
+            });
         }
     }
 }

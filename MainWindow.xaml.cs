@@ -439,6 +439,15 @@ namespace SecretSantaMatcher
             if (_isFilteringExclusions) return;
             if (sender is ComboBox cb && cb.IsKeyboardFocusWithin)
             {
+                // Skip text changed handling if the user is actively navigating/selecting using the keyboard arrow keys
+                if (Keyboard.IsKeyDown(Key.Down) || 
+                    Keyboard.IsKeyDown(Key.Up) || 
+                    Keyboard.IsKeyDown(Key.PageDown) || 
+                    Keyboard.IsKeyDown(Key.PageUp))
+                {
+                    return;
+                }
+
                 _isFilteringExclusions = true;
                 try
                 {
@@ -479,6 +488,10 @@ namespace SecretSantaMatcher
                             {
                                 cb.IsDropDownOpen = true;
                             }
+                            else
+                            {
+                                cb.IsDropDownOpen = false;
+                            }
                         }
 
                         // Defer setting selection and caret position to run after WPF layout pass
@@ -493,7 +506,7 @@ namespace SecretSantaMatcher
                                 }
                                 else
                                 {
-                                    tbEditable.SelectionStart = caretIndex;
+                                    tbEditable.SelectionStart = Math.Min(caretIndex, tbEditable.Text.Length);
                                 }
                                 tbEditable.SelectionLength = 0;
                             }
@@ -518,44 +531,52 @@ namespace SecretSantaMatcher
 
         private void InputSO_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            if (_isFilteringExclusions) return;
-            if (sender is ComboBox cb && cb.IsKeyboardFocusWithin)
+        }
+
+        private void InputSO_DropDownClosed(object sender, EventArgs e)
+        {
+            if (InputSO.SelectedIndex != -1)
             {
-                // If an item is selected and the user is NOT actively scrolling via keyboard arrow keys,
-                // then this selection was triggered by a mouse click or a committed selection!
-                if (cb.SelectedIndex != -1 && 
-                    !Keyboard.IsKeyDown(Key.Down) && 
-                    !Keyboard.IsKeyDown(Key.Up) && 
-                    !Keyboard.IsKeyDown(Key.PageDown) && 
-                    !Keyboard.IsKeyDown(Key.PageUp))
-                {
-                    // Defer the invocation slightly to allow selection state to settle
-                    Dispatcher.BeginInvoke(new Action(() =>
-                    {
-                        AddExclusionFromInput();
-                    }), System.Windows.Threading.DispatcherPriority.Background);
-                }
+                AddExclusionFromInput();
             }
         }
 
         private void AddExclusionFromInput()
         {
+            // Close the dropdown cleanly
+            InputSO.IsDropDownOpen = false;
+
             string? selectedId = null;
-            if (InputSO.SelectedValue is string id && !string.IsNullOrEmpty(id) && InputSO.SelectedItem is Participant selectedItem && string.Equals(selectedItem.Name, InputSO.Text.Trim(), StringComparison.OrdinalIgnoreCase))
+
+            if (InputSO.SelectedItem is Participant selectedItem)
             {
-                selectedId = id;
+                selectedId = selectedItem.Id;
             }
             else if (!string.IsNullOrWhiteSpace(InputSO.Text))
             {
+                string text = InputSO.Text.Trim();
                 // Try to find a candidate whose name matches the typed text exactly (case-insensitive)
                 var matched = _participants
                     .Where(p => (string.IsNullOrEmpty(_editingParticipantId) || p.Id != _editingParticipantId)
                                 && !_formExclusions.Contains(p.Id))
-                    .FirstOrDefault(p => string.Equals(p.Name, InputSO.Text.Trim(), StringComparison.OrdinalIgnoreCase));
+                    .FirstOrDefault(p => string.Equals(p.Name, text, StringComparison.OrdinalIgnoreCase));
                 
                 if (matched != null)
                 {
                     selectedId = matched.Id;
+                }
+                else
+                {
+                    // Fallback: search for first partial match starting with the typed text in current candidates
+                    if (InputSO.ItemsSource is IEnumerable<Participant> candidates)
+                    {
+                        var candidateList = candidates.ToList();
+                        var startMatch = candidateList.FirstOrDefault(p => p.Name.StartsWith(text, StringComparison.OrdinalIgnoreCase));
+                        if (startMatch != null)
+                        {
+                            selectedId = startMatch.Id;
+                        }
+                    }
                 }
             }
 
@@ -565,23 +586,41 @@ namespace SecretSantaMatcher
                 if (!string.IsNullOrEmpty(_editingParticipantId) && selectedId == _editingParticipantId)
                 {
                     MessageBox.Show("A participant cannot be excluded from matching with themselves.", "Invalid Exclusion", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    Dispatcher.BeginInvoke(new Action(() =>
+                    {
+                        InputSO.SelectedIndex = -1;
+                        InputSO.Text = string.Empty;
+                    }), System.Windows.Threading.DispatcherPriority.Background);
                     return;
                 }
 
                 if (_formExclusions.Contains(selectedId))
                 {
                     MessageBox.Show("This participant is already excluded.", "Duplicate Exclusion", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    Dispatcher.BeginInvoke(new Action(() =>
+                    {
+                        InputSO.SelectedIndex = -1;
+                        InputSO.Text = string.Empty;
+                    }), System.Windows.Threading.DispatcherPriority.Background);
                     return;
                 }
 
                 _formExclusions.Add(selectedId);
-                InputSO.Text = string.Empty;
-                InputSO.SelectedIndex = -1;
+                Dispatcher.BeginInvoke(new Action(() =>
+                {
+                    InputSO.SelectedIndex = -1;
+                    InputSO.Text = string.Empty;
+                }), System.Windows.Threading.DispatcherPriority.Background);
                 RefreshParticipantsList();
             }
             else
             {
                 MessageBox.Show("Please select or type a valid participant name to exclude.", "No Match Found", MessageBoxButton.OK, MessageBoxImage.Information);
+                Dispatcher.BeginInvoke(new Action(() =>
+                {
+                    InputSO.SelectedIndex = -1;
+                    InputSO.Text = string.Empty;
+                }), System.Windows.Threading.DispatcherPriority.Background);
             }
         }
 

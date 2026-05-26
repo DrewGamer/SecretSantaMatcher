@@ -237,6 +237,7 @@
                                                TextBoxBase.TextChanged="InputSO_TextChanged"
                                                PreviewKeyDown="InputSO_PreviewKeyDown"
                                                SelectionChanged="InputSO_SelectionChanged"
+                                               DropDownClosed="InputSO_DropDownClosed"
                                                DisplayMemberPath="Name" 
                                                SelectedValuePath="Id" 
                                                ToolTip="Type to search and select or press Enter to add an exclusion." 
