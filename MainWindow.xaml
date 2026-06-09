@@ -431,7 +431,7 @@
 
                                 <!-- Subject Input -->
                                 <TextBlock Grid.Row="0" Text="Email Subject Line" Style="{StaticResource HeaderLabelStyle}"/>
-                                <TextBox Grid.Row="1" x:Name="TemplateSubject" Margin="0,0,0,15" TextChanged="Template_TextChanged" ToolTip="Subject line of the email."/>
+                                <TextBox Grid.Row="1" x:Name="TemplateSubject" Margin="0,0,0,15" TextChanged="Template_TextChanged" GotFocus="TemplateTextBox_GotFocus" ToolTip="Subject line of the email."/>
 
                                 <!-- Body Input -->
                                 <TextBlock Grid.Row="3" Text="Email Body Text" Style="{StaticResource HeaderLabelStyle}"/>
@@ -440,24 +440,17 @@
                                          TextWrapping="Wrap" 
                                          VerticalContentAlignment="Top" 
                                          TextChanged="Template_TextChanged"
+                                         GotFocus="TemplateTextBox_GotFocus"
                                          ToolTip="Write your message here. Templates support both Plain-text and HTML formatting (e.g. &lt;p&gt;, &lt;b&gt;, etc.)"/>
 
                                 <!-- Dynamic Helper Badges -->
                                 <StackPanel Grid.Row="6">
-                                    <TextBlock Text="Placeholder Token Tokens (Clicking values doesn't insert, but write them exactly):" FontSize="11" Foreground="{StaticResource TextSecondary}" Margin="0,0,0,6"/>
+                                    <TextBlock Text="Click any placeholder below to insert it at the cursor position:" FontSize="11" Foreground="{StaticResource TextSecondary}" Margin="0,0,0,6"/>
                                     <WrapPanel>
-                                        <Border Background="#1e293b" BorderThickness="1" BorderBrush="{StaticResource AccentPrimary}" CornerRadius="4" Padding="6,3" Margin="0,0,6,6" ToolTip="Inserts the giver's full name.">
-                                            <TextBlock Text="{}{Giver}" FontSize="10" Foreground="{StaticResource AccentCyan}" FontWeight="Bold"/>
-                                        </Border>
-                                        <Border Background="#1e293b" BorderThickness="1" BorderBrush="{StaticResource AccentPrimary}" CornerRadius="4" Padding="6,3" Margin="0,0,6,6" ToolTip="Inserts their matched person's name (Buying for).">
-                                            <TextBlock Text="{}{Receiver}" FontSize="10" Foreground="#f43f5e" FontWeight="Bold"/>
-                                        </Border>
-                                        <Border Background="#1e293b" BorderThickness="1" BorderBrush="{StaticResource AccentPrimary}" CornerRadius="4" Padding="6,3" Margin="0,0,6,6" ToolTip="Inserts their matched person's wishlist link.">
-                                            <TextBlock Text="{}{Wishlist}" FontSize="10" Foreground="#10b981" FontWeight="Bold"/>
-                                        </Border>
-                                        <Border Background="#1e293b" BorderThickness="1" BorderBrush="{StaticResource AccentPrimary}" CornerRadius="4" Padding="6,3" Margin="0,0,6,6" ToolTip="Inserts the organizer's name.">
-                                            <TextBlock Text="{}{Organizer}" FontSize="10" Foreground="#eab308" FontWeight="Bold"/>
-                                        </Border>
+                                        <Button Style="{StaticResource TokenButtonStyle}" Content="{}{Giver}" Foreground="{StaticResource AccentCyan}" BorderBrush="#06b6d4" ToolTip="Inserts the giver's full name where the cursor is." Click="TokenButton_Click"/>
+                                        <Button Style="{StaticResource TokenButtonStyle}" Content="{}{Receiver}" Foreground="#f43f5e" BorderBrush="#f43f5e" ToolTip="Inserts their matched person's name (Buying for) where the cursor is." Click="TokenButton_Click"/>
+                                        <Button Style="{StaticResource TokenButtonStyle}" Content="{}{Wishlist}" Foreground="#10b981" BorderBrush="#10b981" ToolTip="Inserts their matched person's wishlist link where the cursor is." Click="TokenButton_Click"/>
+                                        <Button Style="{StaticResource TokenButtonStyle}" Content="{}{Organizer}" Foreground="#eab308" BorderBrush="#eab308" ToolTip="Inserts the organizer's name where the cursor is." Click="TokenButton_Click"/>
                                     </WrapPanel>
                                 </StackPanel>
                             </Grid>

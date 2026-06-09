@@ -620,5 +620,128 @@ namespace SecretSantaMatcher.Tests
                 Assert.Empty(formExclusions);
             });
         }
+
+        private void SetPrivateField<T>(MainWindow window, string fieldName, T value)
+        {
+            var field = typeof(MainWindow).GetField(fieldName, BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Public);
+            if (field == null)
+            {
+                var prop = typeof(MainWindow).GetProperty(fieldName, BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Public);
+                if (prop != null)
+                {
+                    prop.SetValue(window, value);
+                    return;
+                }
+                throw new InvalidOperationException($"Could not find field or property '{fieldName}' in MainWindow.");
+            }
+            field.SetValue(window, value);
+        }
+
+        [Fact]
+        public void TemplateTextBox_GotFocus_ShouldTrackLastFocusedTextBox()
+        {
+            using var backup = new SessionBackupFixture();
+            RunInSTA(() =>
+            {
+                var window = new MainWindow();
+                var templateSubject = GetPrivateField<TextBox>(window, "TemplateSubject");
+                var templateBody = GetPrivateField<TextBox>(window, "TemplateBody");
+
+                // GotFocus with TemplateSubject
+                InvokePrivateMethod(window, "TemplateTextBox_GotFocus", templateSubject, new RoutedEventArgs(UIElement.GotFocusEvent));
+                var lastFocused = GetPrivateField<TextBox?>(window, "_lastFocusedTemplateTextBox");
+                Assert.Same(templateSubject, lastFocused);
+
+                // GotFocus with TemplateBody
+                InvokePrivateMethod(window, "TemplateTextBox_GotFocus", templateBody, new RoutedEventArgs(UIElement.GotFocusEvent));
+                lastFocused = GetPrivateField<TextBox?>(window, "_lastFocusedTemplateTextBox");
+                Assert.Same(templateBody, lastFocused);
+            });
+        }
+
+        [Fact]
+        public void TokenButton_Click_WhenTextBoxHasActiveFocus_InsertsTokenAtCaretAndUpdatesSelection()
+        {
+            using var backup = new SessionBackupFixture();
+            RunInSTA(() =>
+            {
+                var window = new MainWindow();
+                var templateSubject = GetPrivateField<TextBox>(window, "TemplateSubject");
+                
+                // Set initial text and SelectionStart
+                templateSubject.Text = "Dear , welcome!";
+                templateSubject.SelectionStart = 5;
+                templateSubject.SelectionLength = 0;
+
+                // Make TemplateSubject the active focused element
+                FocusManager.SetFocusedElement(window, templateSubject);
+
+                // Simulate clicking the Giver token button
+                var button = new Button { Content = "{Giver}" };
+                InvokePrivateMethod(window, "TokenButton_Click", button, new RoutedEventArgs());
+
+                // Assert token was inserted at position 5
+                Assert.Equal("Dear {Giver}, welcome!", templateSubject.Text);
+                Assert.Equal(5 + "{Giver}".Length, templateSubject.SelectionStart);
+                Assert.Equal(0, templateSubject.SelectionLength);
+            });
+        }
+
+        [Fact]
+        public void TokenButton_Click_WhenNoTextBoxHasActiveFocusButLastFocusedTextBoxExists_InsertsTokenAtLastFocusedCaret()
+        {
+            using var backup = new SessionBackupFixture();
+            RunInSTA(() =>
+            {
+                var window = new MainWindow();
+                var templateSubject = GetPrivateField<TextBox>(window, "TemplateSubject");
+                
+                // Set initial text and SelectionStart
+                templateSubject.Text = "Dear , welcome!";
+                templateSubject.SelectionStart = 5;
+                templateSubject.SelectionLength = 0;
+
+                // Ensure neither TextBox has active/logical focus, but set _lastFocusedTemplateTextBox
+                FocusManager.SetFocusedElement(window, null);
+                SetPrivateField(window, "_lastFocusedTemplateTextBox", templateSubject);
+
+                // Simulate clicking the Receiver token button
+                var button = new Button { Content = "{Receiver}" };
+                InvokePrivateMethod(window, "TokenButton_Click", button, new RoutedEventArgs());
+
+                // Assert token was inserted at last focused position 5
+                Assert.Equal("Dear {Receiver}, welcome!", templateSubject.Text);
+                Assert.Equal(5 + "{Receiver}".Length, templateSubject.SelectionStart);
+                Assert.Equal(0, templateSubject.SelectionLength);
+            });
+        }
+
+        [Fact]
+        public void TokenButton_Click_WhenNeitherTextBoxIsActiveOrLastFocused_DefaultsToInsertingAtEndOfTemplateBody()
+        {
+            using var backup = new SessionBackupFixture();
+            RunInSTA(() =>
+            {
+                var window = new MainWindow();
+                var templateBody = GetPrivateField<TextBox>(window, "TemplateBody");
+                
+                // Set initial text
+                templateBody.Text = "Hello world.";
+                templateBody.SelectionStart = 3; // Ensure selection start is ignored when defaulted
+
+                // Ensure focus is cleared and last focused is null
+                FocusManager.SetFocusedElement(window, null);
+                SetPrivateField<TextBox?>(window, "_lastFocusedTemplateTextBox", null);
+
+                // Simulate clicking the Wishlist token button
+                var button = new Button { Content = "{Wishlist}" };
+                InvokePrivateMethod(window, "TokenButton_Click", button, new RoutedEventArgs());
+
+                // Assert token was appended to the end of TemplateBody
+                Assert.Equal("Hello world.{Wishlist}", templateBody.Text);
+                Assert.Equal("Hello world.".Length + "{Wishlist}".Length, templateBody.SelectionStart);
+                Assert.Equal(0, templateBody.SelectionLength);
+            });
+        }
     }
 }
