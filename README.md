@@ -9,10 +9,11 @@ A WPF desktop application for coordinating Secret Santa gift exchanges. The appl
 - **Backtracking Solver**: Uses a recursive backtracking search to generate valid gift-giving circles that respect participant exclusions.
 - **Asymmetric Directed Exclusions**: Allows participants to hold multiple directed exclusions (for example, A cannot buy for B, and B cannot buy for C) to support complex relational constraints.
 - **Mirror Match Prevention**: Optional setting to exclude reciprocal matches (where A buys for B and B buys for A) to increase variety.
-- **Live Email Template Preview**: Renders a live preview of the drafted email subject and body as you type, using template tokens.
+- **Live Email Template Preview & Interactive Tokens**: Renders a live preview of the drafted email subject and body using template tokens, with interactive click-to-insert buttons for caret-based token insertion.
 - **Gmail SMTP Integration**: Automatically sends individual matches via Gmail using Google App Passwords. Includes progress tracking and runtime logs.
 - **Session Auto-Save & Legacy Migration**: Saves your session locally on exit. Supports importing and exporting configurations via JSON. Automatically migrates legacy mutual significant-other configurations to bidirectional directed exclusions upon loading.
-- **Dynamic Exclusions Management**: Real-time validation removes existing exclusions and the participant itself from available selection candidates. Deleting a participant automatically sweeps and removes their reference from all other exclusion lists to maintain state consistency.
+- **Dynamic Exclusions & Confirmation Safety**: Real-time validation removes existing exclusions and the participant itself from available selection candidates. Deleting a participant automatically sweeps and removes their reference from other lists, while safety confirmation popups protect against accidental deletion or list clearing.
+
 
 ---
 
@@ -52,7 +53,8 @@ The compiled standalone executable will be generated at:
 - Enter a participant's Name, Email, and optionally a Wishlist URL.
 - **Exclusions**: Use the **Exclusions Manager** panel to add multiple directed exclusions. Select another participant from the dropdown and click Add. You can remove existing exclusions by clicking the Remove button next to their name.
 - **Directed Behavior**: These exclusions prevent the current participant from buying for the selected recipient. They are asymmetric (directed) by default, meaning that excluding B for participant A does not automatically exclude A for participant B unless explicitly added.
-- **Auto-Cleanup**: Editing or deleting participants automatically sweeps all exclusion lists in the session and removes references to the affected participant to keep data clean.
+- **Auto-Cleanup & Confirmation Safety**: Editing or deleting participants automatically sweeps all exclusion lists in the session and removes references to the affected participant. Standardized confirmation dialogs pop up before participant deletion or list clearing to safeguard against configuration loss.
+
 
 ### 2. Customize Email Template
 - Go to the **Email Template** tab.
@@ -61,7 +63,9 @@ The compiled standalone executable will be generated at:
   - `{Receiver}`: The name of the recipient who gets the gift.
   - `{Wishlist}`: The wishlist URL of the recipient.
   - `{Organizer}`: The name of the exchange coordinator.
+- **Interactive Insert Buttons**: You can click any of the token buttons below the input fields to insert that token directly at your current text cursor (caret) position.
 - Inspect the **Live Sandbox Preview** card to see the rendered output.
+
 
 ### 3. Configure SMTP Settings
 - Go to the **Gmail Settings** tab.
