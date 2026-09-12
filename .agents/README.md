@@ -1,36 +1,52 @@
-# Secret Santa Matcher - Agent Registry
+# Secret Santa Matcher - Agentic Workflow & XP Orchestrator
 
-Welcome to your project's custom **Agent Registry**! This directory contains the system profiles, behavioral prompts, and boundaries for your specialized team of development subagents. 
-
-By delegating tasks to these specialized agents, you maintain high code quality, rapid development times, and a clear separation of concerns across the application.
+This directory contains the skills, personas, scripts, and plans powering the **Extreme Programming (XP)** development lifecycle for the Secret Santa Matcher project, synchronized from [DrewGamer/agent-xp-workflow](https://github.com/DrewGamer/agent-xp-workflow).
 
 ---
 
-## Meet Your Specialized Team
+## Directory Structure
 
-| Agent Profile | Role / Focus | Primary Files Managed |
-| :--- | :--- | :--- |
-| [UI/UX Agent](ui_ux_agent.md) | Presentation, visual design, responsiveness, grids, themes, and micro-animations. | `MainWindow.xaml`, `App.xaml`, resource dictionaries. |
-| [Backend & Logic Agent](backend_logic_agent.md) | Math solvers, data structures, local saving, JSON configurations, cryptography, and SMTP networking. | `Services/*`, `Models/*`, `MainWindow.xaml.cs`. |
-| [Testing Agent](testing_agent.md) | Verification scripts, unit tests, bounds checking, data templates integrity, and user flow UI automation. | `tests/*` (proposed), test reports, and verification plans. |
-
----
-
-## How to Launch These Agents
-
-When you want to kick off a new feature or optimization, you can ask your primary assistant to launch one of these agents.
-
-### Example Commands:
-- *"Launch the **UI/UX Agent** to style the matching statistics container with a subtle cyan glow."*
-- *"Spin up the **Backend Agent** to optimize our backtracking solver to check for sub-groups in larger lists."*
-
-The primary assistant will read the respective `.md` profile, programmatically configure a subagent using the system prompt inside, and set it to work in a parallel background workspace.
+```
+.agents/
+├── hooks.json            # Tool hooks and pre-execution safety gates
+├── personas/             # Specialized agent personas (xp-architect, xp-developer)
+├── plans/                # Active project state (xp-state.md) and task backlogs
+├── scripts/              # Workflow synchronization and security gate scripts
+└── skills/               # Reusable agentic skills (xp-orchestrator, release-packager, etc.)
+```
 
 ---
 
-## Collaborative Rules of Engagement
+## Key Personas & Skills
 
-To prevent conflict and code regressions, the agents adhere to these strict boundary rules:
-1. **No Shared Overwrite**: The UI/UX Agent never touches C# solver/network code, and the Backend Agent never touches XAML grids/styles.
-2. **Contract-First State**: If a backend logic update requires a new UI element, the Backend Agent outlines the model bindings first, then coordinates with the UI/UX Agent to implement the visual XAML.
-3. **Strict Branch Isolation**: Agents must never perform work or leave uncommitted modifications directly on the main branch. A descriptive branch prefixed with `feature/` or `bugfix/` must be checked out at the beginning of the development cycle, and all work staged and committed there.
+### Personas (`personas/`)
+* **`xp-architect`**: Lead Systems Architect responsible for high-level structure, technical boundary setting, and creating actionable blueprints.
+* **`xp-developer`**: Senior Developer practicing Test-Driven Development (TDD), pair programming, small reviewable commits, and incremental delivery.
+
+### Skills (`skills/`)
+* **`xp-orchestrator`**: The primary lifecycle engine guiding features through:
+  1. Phase 0: Initialization & Branch Alignment
+  2. Phase 1: Architecture & Design Approval
+  3. Phase 2: XP Development Loop (TDD & Pair Programming)
+  4. Phase 3: Continuous Release Packaging
+  5. Phase 4: Manual Testing
+  6. Phase 5: GitHub PR, Changelog & Release Gates
+* **`human-checkpoint`**: Explicit gates requiring user approval for architecture decisions, package testing, and release creation.
+* **`release-packager`**: Deterministic build & package verification tool for both continuous builds and final releases.
+* **`environment-manager`**: Supervised dependency acquisition and fallback escalation.
+* **`genesis`**: Agentic module design and benchmarking discipline.
+
+---
+
+## Project State (`plans/xp-state.md`)
+The single source of truth for current active goals, constraints, backlog tasks, and engineering standards is persisted in:
+👉 [`.agents/plans/xp-state.md`](plans/xp-state.md)
+
+---
+
+## Keeping Up to Date
+To synchronize upstream updates to shared skills and personas from `DrewGamer/agent-xp-workflow`:
+```powershell
+powershell -ExecutionPolicy Bypass -File .agents/scripts/sync_workflow.ps1
+```
+*(This updates shared engine files while preserving local plans in `.agents/plans/` and custom hooks).*
