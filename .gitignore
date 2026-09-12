@@ -25,6 +25,7 @@ Desktop.ini
 *.json
 !appsettings.json
 !appsettings.*.json
+!.agents/hooks.json
 
 # MSBuild / Publish output
 *.publish.xml
