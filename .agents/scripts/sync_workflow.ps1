@@ -38,12 +38,14 @@ try {
         throw "Failed to clone upstream repository."
     }
 
-    # 3. Sync skills
+    # 3. Sync skills (excluding meta-design skills like genesis)
     $srcSkills = Join-Path $tempDir "skills"
     $destSkills = Join-Path $agentsDir "skills"
     if (Test-Path $srcSkills) {
         if (-not (Test-Path $destSkills)) { New-Item -ItemType Directory -Path $destSkills -Force | Out-Null }
-        Copy-Item -Path "$srcSkills\*" -Destination $destSkills -Recurse -Force
+        Get-ChildItem -Path $srcSkills -Exclude "genesis" | ForEach-Object {
+            Copy-Item -Path $_.FullName -Destination $destSkills -Recurse -Force
+        }
         Write-Host "  [+] Synced skills -> $destSkills" -ForegroundColor Green
     }
 

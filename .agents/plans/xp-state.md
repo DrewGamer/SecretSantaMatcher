@@ -51,7 +51,7 @@ WPF desktop application for Secret Santa participant management, constraint-base
 ## 5. Sub-Agent Coordination
 - Transitioned project governance from legacy functional silos (`testing_agent`, `backend_logic_agent`, `ui_ux_agent`) to the unified Extreme Programming (XP) lifecycle.
 - Core personas: `xp-architect` (system architecture and boundaries), `xp-developer` (TDD, pair programming, incremental delivery).
-- Core skills: `xp-orchestrator`, `environment-manager`, `human-checkpoint`, `release-packager`, `genesis`.
+- Core skills: `xp-orchestrator`, `environment-manager`, `human-checkpoint`, `release-packager`.
 - Active working branch: `feature/overhaul-agentic-workflow`.
 
 ## 6. Checkpoints & History

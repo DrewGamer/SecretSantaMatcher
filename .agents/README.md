@@ -34,7 +34,6 @@ This directory contains the skills, personas, scripts, and plans powering the **
 * **`human-checkpoint`**: Explicit gates requiring user approval for architecture decisions, package testing, and release creation.
 * **`release-packager`**: Deterministic build & package verification tool for both continuous builds and final releases.
 * **`environment-manager`**: Supervised dependency acquisition and fallback escalation.
-* **`genesis`**: Agentic module design and benchmarking discipline.
 
 ---
 

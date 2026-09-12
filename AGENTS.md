@@ -12,7 +12,6 @@ Development tasks and feature lifecycles are governed by the **XP Orchestrator**
    - `human-checkpoint`: Human-in-the-loop authorization gates for architecture approvals, package testing, and release creation.
    - `environment-manager`: Supervised tool acquisition and fallback escalation for missing compilers, libraries, and CLI tools.
    - `release-packager`: Deterministic build & package verification tool for continuous and release artifacts.
-   - `genesis`: Agentic primitive design and architecture discipline.
 
 Project state, active goals, constraints, backlog, and checkpoints are persisted in `.agents/plans/xp-state.md`.
 

@@ -31,3 +31,6 @@ Desktop.ini
 *.publish.xml
 *.pubxml
 *.pubxml.user
+
+# Agent Skills Exclusions
+.agents/skills/genesis/
