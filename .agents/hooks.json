@@ -1,0 +1,15 @@
+{
+  "workspace-security-gate": {
+    "PreToolUse": [
+      {
+        "matcher": "run_command|write_to_file|replace_file_content",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/security_gate.ps1"
+          }
+        ]
+      }
+    ]
+  }
+}
