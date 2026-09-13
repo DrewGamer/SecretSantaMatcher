@@ -3,11 +3,11 @@
 ## 1. Project Context
 **Project Name:** Secret Santa Matcher
 **Project Type:** Application
-**Current Stage:** Completed
+**Current Stage:** Manual Testing
 **Primary Tech Stack:** C# (.NET 10.0-windows, WPF), xUnit
 
 ## 2. Active Goal & Constraints (B8 Attention Anchor)
-**Current Objective:** Update SecretSantaMatcher to allow duplicate emails with participants, presenting a warning dialog detailing the email address and who it is attached to, prompting to continue anyway or go back and change it.
+**Current Objective:** Configure release packaging to produce a truly standalone, self-contained single .exe (SecretSantaMatcher.exe) for win-x64 with zero external dependencies and zero loose companion files.
 **Hard Constraints:** 
 - MUST pass human checkpoint for architecture approval.
 - MUST pass human checkpoint for PR reviews.
@@ -34,37 +34,37 @@
 
 ## 3. Architecture & Tooling
 **Approved Architecture:**
-Allow duplicate emails for participants with a confirmation warning dialog in `AddParticipant_Click` via `MessageBoxShowHandler(..., "Duplicate Email Warning", MessageBoxButton.YesNo, MessageBoxImage.Warning)`. When Yes is chosen, participant is added/saved; when No is chosen, inputs are preserved and email field is focused. Detailed in `.agents/plans/duplicate-email-architecture.md`.
+Standalone single-file executable packaging (Option A) with embedded CLR runtime and WPF native binaries, Deflate compression, embedded debug symbols, and isolated dev loop. Detailed in `.agents/plans/single-file-executable-architecture.md`.
 **Dependencies / Frameworks / Tools:**
 - .NET 10 SDK (`dotnet`)
 - Git CLI (`git`)
 - GitHub CLI (`gh`)
-**Build / Packaging Command:** `dotnet publish SecretSantaMatcher.csproj -c Release -o bin/Release/publish`
-**Verification / Test Command:** `dotnet test`
+**Build / Packaging Command:** `dotnet publish SecretSantaMatcher.csproj -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -p:EnableCompressionInSingleFile=true -p:DebugType=embedded -o bin/Release/publish`
+**Verification / Test Command:** `dotnet test SecretSantaMatcher.Tests/SecretSantaMatcher.Tests.csproj`
 
 ## 4. Work Backlog (B7 Todo Commands)
 | ID | Title | Status | Assigned Persona | Dependencies |
 |---|---|---|---|---|
-| T1 | Duplicate Email Allowance Architecture Blueprint | completed | xp-architect | - |
-| T2 | Implement Duplicate Email Warning Confirmation Dialog in MainWindow | completed | xp-developer | T1 |
-| T3 | Unit & UI Transition Tests for Duplicate Email Scenarios | completed | xp-developer | T2 |
+| T1 | Single-File Executable Architecture Blueprint | completed | xp-architect | - |
+| T2 | Configure csproj & Publish Profile for Standalone win-x64 Packaging | completed | xp-developer | T1 |
+| T3 | Verification Test of Single-File Packaging & Inner-Loop Integrity | completed | xp-developer | T2 |
 | T4 | Verification & Continuous Packaging | completed | xp-orchestrator | T3 |
-| T5 | PR Merge, Release Packaging & v1.2.0 Tagging | completed | xp-orchestrator | T4 |
+| T5 | PR Merge, Release Packaging & Tagging | pending | xp-orchestrator | T4 |
 
 ## 5. Sub-Agent Coordination
 - Personas: `xp-architect` (system architecture and boundaries), `xp-developer` (TDD, pair programming, incremental delivery).
 - Core skills: `xp-orchestrator`, `environment-manager`, `human-checkpoint`, `release-packager`.
-- Working branch: `feature/allow-duplicate-emails` (merged to `main`).
+- Working branch: `feature/single-file-executable`.
 
 ## 6. Checkpoints & History
 - [x] Architecture Approved (human approval)
 - [x] Continuous Build Uploaded (https://github.com/DrewGamer/SecretSantaMatcher/releases/tag/continuous-build)
-- [x] PR 1 Reviewed & Approved (PR #9 merged to main)
-- [x] Release Package Generated (v1.2.0: https://github.com/DrewGamer/SecretSantaMatcher/releases/tag/v1.2.0)
+- [ ] PR Reviewed & Approved
+- [ ] Release Package Generated
 
 ## 7. Release Configuration
 **Continuous Release Tag:** continuous-build
 **Continuous Release Name:** Continuous Build
-**Target Output Artifact:** bin/Release/SecretSantaMatcher-v1.2.0-win-x64.zip
+**Target Output Artifact:** bin/Release/SecretSantaMatcher-continuous-win-x64.zip
 **Latest Release Tag:** v1.2.0
-**Build Type Override:** 
+**Build Type Override:**  
