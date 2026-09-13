@@ -30,6 +30,7 @@ Desktop.ini
 # MSBuild / Publish output
 *.publish.xml
 *.pubxml
+!Properties/PublishProfiles/*.pubxml
 *.pubxml.user
 
 # Agent Skills Exclusions
