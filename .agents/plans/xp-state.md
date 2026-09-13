@@ -3,7 +3,7 @@
 ## 1. Project Context
 **Project Name:** Secret Santa Matcher
 **Project Type:** Application
-**Current Stage:** Manual Testing
+**Current Stage:** Completed
 **Primary Tech Stack:** C# (.NET 10.0-windows, WPF), xUnit
 
 ## 2. Active Goal & Constraints (B8 Attention Anchor)
@@ -49,20 +49,22 @@ Allow duplicate emails for participants with a confirmation warning dialog in `A
 | T2 | Implement Duplicate Email Warning Confirmation Dialog in MainWindow | completed | xp-developer | T1 |
 | T3 | Unit & UI Transition Tests for Duplicate Email Scenarios | completed | xp-developer | T2 |
 | T4 | Verification & Continuous Packaging | completed | xp-orchestrator | T3 |
+| T5 | PR Merge, Release Packaging & v1.2.0 Tagging | completed | xp-orchestrator | T4 |
 
 ## 5. Sub-Agent Coordination
 - Personas: `xp-architect` (system architecture and boundaries), `xp-developer` (TDD, pair programming, incremental delivery).
 - Core skills: `xp-orchestrator`, `environment-manager`, `human-checkpoint`, `release-packager`.
-- Active working branch: `feature/allow-duplicate-emails`.
+- Working branch: `feature/allow-duplicate-emails` (merged to `main`).
 
 ## 6. Checkpoints & History
 - [x] Architecture Approved (human approval)
 - [x] Continuous Build Uploaded (https://github.com/DrewGamer/SecretSantaMatcher/releases/tag/continuous-build)
-- [ ] PR 1 Reviewed & Approved
-- [ ] Release Package Generated
+- [x] PR 1 Reviewed & Approved (PR #9 merged to main)
+- [x] Release Package Generated (v1.2.0: https://github.com/DrewGamer/SecretSantaMatcher/releases/tag/v1.2.0)
 
 ## 7. Release Configuration
 **Continuous Release Tag:** continuous-build
 **Continuous Release Name:** Continuous Build
-**Target Output Artifact:** bin/Release/SecretSantaMatcher-continuous-win-x64.zip
+**Target Output Artifact:** bin/Release/SecretSantaMatcher-v1.2.0-win-x64.zip
+**Latest Release Tag:** v1.2.0
 **Build Type Override:** 
