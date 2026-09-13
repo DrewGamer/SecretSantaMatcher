@@ -6,6 +6,10 @@ All notable changes to the **Secret Santa Matcher** application since version 1.
 
 ## [Unreleased]
 
+---
+
+## [1.3.0] - 2026-09-13
+
 ### Added
 - **Standalone Single-File Executable Packaging**: Release packages now compile to a single, self-contained `SecretSantaMatcher.exe` for `win-x64` with embedded .NET 10 runtime, WPF native libraries, Deflate compression, and embedded debug symbols, eliminating the need for pre-installed .NET runtimes or loose companion files.
 
