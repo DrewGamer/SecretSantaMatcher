@@ -25,6 +25,7 @@ namespace SecretSantaMatcher
         private TextBox? _lastFocusedTemplateTextBox = null;
 
         internal Func<string, string, MessageBoxButton, MessageBoxImage, MessageBoxResult> MessageBoxShowHandler { get; set; } = MessageBox.Show;
+        internal Func<Key, bool> IsKeyDownHandler { get; set; } = Keyboard.IsKeyDown;
 
         public MainWindow()
         {
@@ -320,11 +321,24 @@ namespace SecretSantaMatcher
                 wishlist = "https://" + wishlist;
             }
 
-            // Check if email already registered to prevent duplicates (excluding the current participant being edited)
-            if (_participants.Any(p => (string.IsNullOrEmpty(_editingParticipantId) || p.Id != _editingParticipantId) && p.Email.Equals(email, StringComparison.OrdinalIgnoreCase)))
+            // Check if email already registered (excluding the current participant being edited) and prompt if duplicates exist
+            var duplicates = _participants
+                .Where(p => (string.IsNullOrEmpty(_editingParticipantId) || p.Id != _editingParticipantId)
+                            && (p.Email?.Trim() ?? string.Empty).Equals(email, StringComparison.OrdinalIgnoreCase))
+                .ToList();
+
+            if (duplicates.Count > 0)
             {
-                MessageBox.Show("This email address has already been added.", "Duplicate Error", MessageBoxButton.OK, MessageBoxImage.Error);
-                return;
+                string duplicateNames = string.Join(", ", duplicates.Select(p => $"'{p.DisplayName}'"));
+                string message = $"The email address '{email}' is already registered to {duplicateNames}.\n\nDo you want to continue anyway, or go back and change it?";
+
+                var dialogResult = MessageBoxShowHandler(message, "Duplicate Email Warning", MessageBoxButton.YesNo, MessageBoxImage.Warning);
+                if (dialogResult != MessageBoxResult.Yes)
+                {
+                    InputEmail.Focus();
+                    InputEmail.SelectAll();
+                    return;
+                }
             }
 
             if (!string.IsNullOrEmpty(_editingParticipantId))
@@ -449,10 +463,10 @@ namespace SecretSantaMatcher
             if (sender is ComboBox cb && cb.IsKeyboardFocusWithin)
             {
                 // Skip text changed handling if the user is actively navigating/selecting using the keyboard arrow keys
-                if (Keyboard.IsKeyDown(Key.Down) || 
-                    Keyboard.IsKeyDown(Key.Up) || 
-                    Keyboard.IsKeyDown(Key.PageDown) || 
-                    Keyboard.IsKeyDown(Key.PageUp))
+                if (IsKeyDownHandler(Key.Down) || 
+                    IsKeyDownHandler(Key.Up) || 
+                    IsKeyDownHandler(Key.PageDown) || 
+                    IsKeyDownHandler(Key.PageUp))
                 {
                     return;
                 }
