@@ -4,6 +4,16 @@ All notable changes to the **Secret Santa Matcher** application since version 1.
 
 ---
 
+## [Unreleased]
+
+### Added
+- **Duplicate Email Allowance & Warning Dialog**: Participants can now share email addresses (useful for families, couples, or organizers managing gifts for dependents). When an email address is already in use, an interactive warning dialog appears detailing the email address and enumerating all participants currently attached to it, prompting the user to either continue anyway or go back and change it.
+
+### Changed
+- **Non-Blocking Email Validation Flow**: Converted the strict duplicate email error block into a flexible confirmation warning, keeping all form inputs and edit state intact when choosing to go back and modify the email.
+
+---
+
 ## [1.1.0] - 2026-06-09
 
 ### Added (New Features)
