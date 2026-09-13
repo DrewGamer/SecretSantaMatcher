@@ -124,6 +124,16 @@ namespace SecretSantaMatcher.Tests
             prop.SetValue(window, handler);
         }
 
+        private void SetIsKeyDownHandler(MainWindow window, Func<Key, bool> handler)
+        {
+            var prop = typeof(MainWindow).GetProperty("IsKeyDownHandler", BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Public);
+            if (prop == null)
+            {
+                throw new InvalidOperationException("Could not find property 'IsKeyDownHandler' in MainWindow.");
+            }
+            prop.SetValue(window, handler);
+        }
+
         private void InvokePrivateMethod(MainWindow window, string methodName, params object[] args)
         {
             var method = typeof(MainWindow).GetMethod(methodName, BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Public);
@@ -542,7 +552,7 @@ namespace SecretSantaMatcher.Tests
                 expectedIndex = inputSO.SelectedIndex;
                 Assert.NotEqual(-1, expectedIndex);
 
-                SimulateKeyDown(Key.Down, true);
+                SetIsKeyDownHandler(window, key => key == Key.Down);
                 try
                 {
                     inputSO.Text = "Char";
@@ -554,8 +564,7 @@ namespace SecretSantaMatcher.Tests
                 }
                 finally
                 {
-                    // Clean up the keyboard state so it doesn't affect other tests
-                    SimulateKeyDown(Key.Down, false);
+                    SetIsKeyDownHandler(window, Keyboard.IsKeyDown);
                 }
             });
         }
@@ -741,6 +750,336 @@ namespace SecretSantaMatcher.Tests
                 Assert.Equal("Hello world.{Wishlist}", templateBody.Text);
                 Assert.Equal("Hello world.".Length + "{Wishlist}".Length, templateBody.SelectionStart);
                 Assert.Equal(0, templateBody.SelectionLength);
+            });
+        }
+
+        [Fact]
+        public void AddParticipant_DuplicateEmail_UserSelectsNo_AbortsAndPreservesForm()
+        {
+            using var backup = new SessionBackupFixture();
+            RunInSTA(() =>
+            {
+                // Arrange
+                var window = new MainWindow();
+                var inputName = GetPrivateField<TextBox>(window, "InputName");
+                var inputEmail = GetPrivateField<TextBox>(window, "InputEmail");
+                var inputWishlist = GetPrivateField<TextBox>(window, "InputWishlist");
+                var participants = GetPrivateField<ObservableCollection<Participant>>(window, "_participants");
+
+                var alice = new Participant { Name = "Alice", Email = "alice@example.com" };
+                participants.Add(alice);
+
+                inputName.Text = "Bob";
+                inputEmail.Text = "alice@example.com";
+                inputWishlist.Text = "https://example.com/bob";
+
+                int dialogCallCount = 0;
+                string? capturedMessage = null;
+                string? capturedTitle = null;
+                MessageBoxButton? capturedButtons = null;
+                MessageBoxImage? capturedIcon = null;
+
+                SetMessageBoxShowHandler(window, (msg, title, buttons, icon) =>
+                {
+                    dialogCallCount++;
+                    capturedMessage = msg;
+                    capturedTitle = title;
+                    capturedButtons = buttons;
+                    capturedIcon = icon;
+                    return MessageBoxResult.No;
+                });
+
+                // Act
+                InvokePrivateMethod(window, "AddParticipant_Click", new Button(), new RoutedEventArgs());
+
+                // Assert
+                Assert.Equal(1, dialogCallCount);
+                Assert.Equal("Duplicate Email Warning", capturedTitle);
+                Assert.Equal(MessageBoxButton.YesNo, capturedButtons);
+                Assert.Equal(MessageBoxImage.Warning, capturedIcon);
+                Assert.Contains("'alice@example.com'", capturedMessage);
+                Assert.Contains("'Alice'", capturedMessage);
+
+                // Verification that save was aborted and form fields remain intact
+                Assert.Single(participants);
+                Assert.Equal("Bob", inputName.Text);
+                Assert.Equal("alice@example.com", inputEmail.Text);
+                Assert.Equal("https://example.com/bob", inputWishlist.Text);
+            });
+        }
+
+        [Fact]
+        public void AddParticipant_DuplicateEmail_UserSelectsYes_AddsParticipantSuccessfully()
+        {
+            using var backup = new SessionBackupFixture();
+            RunInSTA(() =>
+            {
+                // Arrange
+                var window = new MainWindow();
+                var inputName = GetPrivateField<TextBox>(window, "InputName");
+                var inputEmail = GetPrivateField<TextBox>(window, "InputEmail");
+                var inputWishlist = GetPrivateField<TextBox>(window, "InputWishlist");
+                var participants = GetPrivateField<ObservableCollection<Participant>>(window, "_participants");
+
+                var alice = new Participant { Name = "Alice", Email = "alice@example.com" };
+                participants.Add(alice);
+
+                inputName.Text = "Bob";
+                inputEmail.Text = "alice@example.com";
+                inputWishlist.Text = "https://example.com/bob";
+
+                int dialogCallCount = 0;
+                SetMessageBoxShowHandler(window, (msg, title, buttons, icon) =>
+                {
+                    dialogCallCount++;
+                    return MessageBoxResult.Yes;
+                });
+
+                // Act
+                InvokePrivateMethod(window, "AddParticipant_Click", new Button(), new RoutedEventArgs());
+
+                // Assert
+                Assert.Equal(1, dialogCallCount);
+                Assert.Equal(2, participants.Count);
+
+                var bob = participants.FirstOrDefault(p => p.Name == "Bob");
+                Assert.NotNull(bob);
+                Assert.Equal("alice@example.com", bob.Email);
+                Assert.Equal("https://example.com/bob", bob.WishlistUrl);
+
+                // Form fields should be cleared after successful addition
+                Assert.Equal(string.Empty, inputName.Text);
+                Assert.Equal(string.Empty, inputEmail.Text);
+                Assert.Equal(string.Empty, inputWishlist.Text);
+            });
+        }
+
+        [Fact]
+        public void AddParticipant_MultipleDuplicates_DialogListsAllParticipants()
+        {
+            using var backup = new SessionBackupFixture();
+            RunInSTA(() =>
+            {
+                // Arrange
+                var window = new MainWindow();
+                var inputName = GetPrivateField<TextBox>(window, "InputName");
+                var inputEmail = GetPrivateField<TextBox>(window, "InputEmail");
+                var participants = GetPrivateField<ObservableCollection<Participant>>(window, "_participants");
+
+                var alice = new Participant { Name = "Alice", Email = "family@example.com" };
+                var charlie = new Participant { Name = "Charlie", Email = "family@example.com" };
+                participants.Add(alice);
+                participants.Add(charlie);
+
+                inputName.Text = "Bob";
+                inputEmail.Text = "family@example.com";
+
+                int dialogCallCount = 0;
+                string? capturedMessage = null;
+
+                SetMessageBoxShowHandler(window, (msg, title, buttons, icon) =>
+                {
+                    dialogCallCount++;
+                    capturedMessage = msg;
+                    return MessageBoxResult.No;
+                });
+
+                // Act
+                InvokePrivateMethod(window, "AddParticipant_Click", new Button(), new RoutedEventArgs());
+
+                // Assert
+                Assert.Equal(1, dialogCallCount);
+                Assert.NotNull(capturedMessage);
+                Assert.Contains("'Alice'", capturedMessage);
+                Assert.Contains("'Charlie'", capturedMessage);
+                Assert.Contains("'family@example.com'", capturedMessage);
+                Assert.Equal(2, participants.Count);
+            });
+        }
+
+        [Fact]
+        public void EditParticipant_DuplicateEmail_UserSelectsNo_PreservesEditState()
+        {
+            using var backup = new SessionBackupFixture();
+            RunInSTA(() =>
+            {
+                // Arrange
+                var window = new MainWindow();
+                var inputName = GetPrivateField<TextBox>(window, "InputName");
+                var inputEmail = GetPrivateField<TextBox>(window, "InputEmail");
+                var submitParticipantBtn = GetPrivateField<Button>(window, "SubmitParticipantBtn");
+                var cancelEditBtn = GetPrivateField<Button>(window, "CancelEditBtn");
+                var participants = GetPrivateField<ObservableCollection<Participant>>(window, "_participants");
+
+                var alice = new Participant { Name = "Alice", Email = "alice@example.com" };
+                var bob = new Participant { Name = "Bob", Email = "bob@example.com" };
+                participants.Add(alice);
+                participants.Add(bob);
+
+                // Enter edit mode for Bob
+                var editBtn = new Button { Tag = bob.Id };
+                InvokePrivateMethod(window, "EditParticipant_Click", editBtn, new RoutedEventArgs());
+
+                Assert.Equal("Save Changes", submitParticipantBtn.Content);
+                Assert.Equal(Visibility.Visible, cancelEditBtn.Visibility);
+                Assert.Equal(bob.Id, GetPrivateField<string?>(window, "_editingParticipantId"));
+
+                // Try to change Bob's email to Alice's email
+                inputEmail.Text = "alice@example.com";
+
+                int dialogCallCount = 0;
+                SetMessageBoxShowHandler(window, (msg, title, buttons, icon) =>
+                {
+                    dialogCallCount++;
+                    return MessageBoxResult.No;
+                });
+
+                // Act: Click Save Changes (AddParticipant_Click)
+                InvokePrivateMethod(window, "AddParticipant_Click", new Button(), new RoutedEventArgs());
+
+                // Assert: Warning dialog was displayed
+                Assert.Equal(1, dialogCallCount);
+
+                // Bob's email in model was NOT updated
+                Assert.Equal("bob@example.com", bob.Email);
+
+                // Edit state was preserved
+                Assert.Equal(bob.Id, GetPrivateField<string?>(window, "_editingParticipantId"));
+                Assert.Equal("Save Changes", submitParticipantBtn.Content);
+                Assert.Equal(Visibility.Visible, cancelEditBtn.Visibility);
+                Assert.Equal("alice@example.com", inputEmail.Text);
+            });
+        }
+
+        [Fact]
+        public void EditParticipant_DuplicateEmail_UserSelectsYes_UpdatesParticipant()
+        {
+            using var backup = new SessionBackupFixture();
+            RunInSTA(() =>
+            {
+                // Arrange
+                var window = new MainWindow();
+                var inputEmail = GetPrivateField<TextBox>(window, "InputEmail");
+                var submitParticipantBtn = GetPrivateField<Button>(window, "SubmitParticipantBtn");
+                var cancelEditBtn = GetPrivateField<Button>(window, "CancelEditBtn");
+                var participants = GetPrivateField<ObservableCollection<Participant>>(window, "_participants");
+
+                var alice = new Participant { Name = "Alice", Email = "alice@example.com" };
+                var bob = new Participant { Name = "Bob", Email = "bob@example.com" };
+                participants.Add(alice);
+                participants.Add(bob);
+
+                // Enter edit mode for Bob
+                var editBtn = new Button { Tag = bob.Id };
+                InvokePrivateMethod(window, "EditParticipant_Click", editBtn, new RoutedEventArgs());
+
+                // Change Bob's email to Alice's email
+                inputEmail.Text = "alice@example.com";
+
+                int dialogCallCount = 0;
+                SetMessageBoxShowHandler(window, (msg, title, buttons, icon) =>
+                {
+                    dialogCallCount++;
+                    return MessageBoxResult.Yes;
+                });
+
+                // Act: Click Save Changes
+                InvokePrivateMethod(window, "AddParticipant_Click", new Button(), new RoutedEventArgs());
+
+                // Assert: Dialog was shown and participant was updated
+                Assert.Equal(1, dialogCallCount);
+                Assert.Equal("alice@example.com", bob.Email);
+
+                // Edit state was cleared
+                Assert.Null(GetPrivateField<string?>(window, "_editingParticipantId"));
+                Assert.Equal("Add Exchange Member", submitParticipantBtn.Content);
+                Assert.Equal(Visibility.Collapsed, cancelEditBtn.Visibility);
+                Assert.Equal(string.Empty, inputEmail.Text);
+            });
+        }
+
+        [Fact]
+        public void EditParticipant_UnchangedEmail_DoesNotTriggerWarning()
+        {
+            using var backup = new SessionBackupFixture();
+            RunInSTA(() =>
+            {
+                // Arrange
+                var window = new MainWindow();
+                var inputName = GetPrivateField<TextBox>(window, "InputName");
+                var inputEmail = GetPrivateField<TextBox>(window, "InputEmail");
+                var participants = GetPrivateField<ObservableCollection<Participant>>(window, "_participants");
+
+                var alice = new Participant { Name = "Alice", Email = "alice@example.com" };
+                participants.Add(alice);
+
+                // Enter edit mode for Alice
+                var editBtn = new Button { Tag = alice.Id };
+                InvokePrivateMethod(window, "EditParticipant_Click", editBtn, new RoutedEventArgs());
+
+                // Modify name, keeping email identical
+                inputName.Text = "Alice Updated";
+                Assert.Equal("alice@example.com", inputEmail.Text);
+
+                int dialogCallCount = 0;
+                SetMessageBoxShowHandler(window, (msg, title, buttons, icon) =>
+                {
+                    dialogCallCount++;
+                    return MessageBoxResult.Yes;
+                });
+
+                // Act: Click Save Changes
+                InvokePrivateMethod(window, "AddParticipant_Click", new Button(), new RoutedEventArgs());
+
+                // Assert: Dialog was NEVER invoked because self-match is excluded
+                Assert.Equal(0, dialogCallCount);
+                Assert.Equal("Alice Updated", alice.Name);
+                Assert.Equal("alice@example.com", alice.Email);
+                Assert.Null(GetPrivateField<string?>(window, "_editingParticipantId"));
+            });
+        }
+
+        [Fact]
+        public void AddParticipant_DuplicateEmail_CaseAndWhitespaceInsensitive()
+        {
+            using var backup = new SessionBackupFixture();
+            RunInSTA(() =>
+            {
+                // Arrange
+                var window = new MainWindow();
+                var inputName = GetPrivateField<TextBox>(window, "InputName");
+                var inputEmail = GetPrivateField<TextBox>(window, "InputEmail");
+                var participants = GetPrivateField<ObservableCollection<Participant>>(window, "_participants");
+
+                var alice = new Participant { Name = "Alice", Email = "alice@example.com" };
+                participants.Add(alice);
+
+                // Input with leading/trailing spaces and uppercase characters
+                inputName.Text = "Bob";
+                inputEmail.Text = "   ALICE@EXAMPLE.COM   ";
+
+                int dialogCallCount = 0;
+                string? capturedMessage = null;
+                SetMessageBoxShowHandler(window, (msg, title, buttons, icon) =>
+                {
+                    dialogCallCount++;
+                    capturedMessage = msg;
+                    return MessageBoxResult.Yes;
+                });
+
+                // Act
+                InvokePrivateMethod(window, "AddParticipant_Click", new Button(), new RoutedEventArgs());
+
+                // Assert
+                Assert.Equal(1, dialogCallCount);
+                Assert.NotNull(capturedMessage);
+                Assert.Contains("'Alice'", capturedMessage);
+                Assert.Contains("'ALICE@EXAMPLE.COM'", capturedMessage);
+
+                Assert.Equal(2, participants.Count);
+                var bob = participants.FirstOrDefault(p => p.Name == "Bob");
+                Assert.NotNull(bob);
+                Assert.Equal("ALICE@EXAMPLE.COM", bob.Email);
             });
         }
     }

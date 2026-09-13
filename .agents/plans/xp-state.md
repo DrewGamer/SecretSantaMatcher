@@ -3,11 +3,11 @@
 ## 1. Project Context
 **Project Name:** Secret Santa Matcher
 **Project Type:** Application
-**Current Stage:** Architecture
+**Current Stage:** Development
 **Primary Tech Stack:** C# (.NET 10.0-windows, WPF), xUnit
 
 ## 2. Active Goal & Constraints (B8 Attention Anchor)
-**Current Objective:** Overhaul the agentic workflow of the project, integrating the XP lifecycle orchestrator, skills, and personas from DrewGamer/agent-xp-workflow.
+**Current Objective:** Update SecretSantaMatcher to allow duplicate emails with participants, presenting a warning dialog detailing the email address and who it is attached to, prompting to continue anyway or go back and change it.
 **Hard Constraints:** 
 - MUST pass human checkpoint for architecture approval.
 - MUST pass human checkpoint for PR reviews.
@@ -34,7 +34,7 @@
 
 ## 3. Architecture & Tooling
 **Approved Architecture:**
-WPF desktop application for Secret Santa participant management, constraint-based pairing algorithms (with exclusions and reciprocity rules), draft email template generation with interactive tokens, and SMTP email dispatch.
+Allow duplicate emails for participants with a confirmation warning dialog in `AddParticipant_Click` via `MessageBoxShowHandler(..., "Duplicate Email Warning", MessageBoxButton.YesNo, MessageBoxImage.Warning)`. When Yes is chosen, participant is added/saved; when No is chosen, inputs are preserved and email field is focused. Detailed in `.agents/plans/duplicate-email-architecture.md`.
 **Dependencies / Frameworks / Tools:**
 - .NET 10 SDK (`dotnet`)
 - Git CLI (`git`)
@@ -45,17 +45,18 @@ WPF desktop application for Secret Santa participant management, constraint-base
 ## 4. Work Backlog (B7 Todo Commands)
 | ID | Title | Status | Assigned Persona | Dependencies |
 |---|---|---|---|---|
-| T1 | Agentic Workflow Architecture & Governance Blueprint | pending | xp-architect | - |
-| T2 | Agentic Workflow & Persona Registry Implementation | pending | xp-developer | T1 |
+| T1 | Duplicate Email Allowance Architecture Blueprint | completed | xp-architect | - |
+| T2 | Implement Duplicate Email Warning Confirmation Dialog in MainWindow | completed | xp-developer | T1 |
+| T3 | Unit & UI Transition Tests for Duplicate Email Scenarios | completed | xp-developer | T2 |
+| T4 | Verification & Continuous Packaging | pending | xp-orchestrator | T3 |
 
 ## 5. Sub-Agent Coordination
-- Transitioned project governance from legacy functional silos (`testing_agent`, `backend_logic_agent`, `ui_ux_agent`) to the unified Extreme Programming (XP) lifecycle.
-- Core personas: `xp-architect` (system architecture and boundaries), `xp-developer` (TDD, pair programming, incremental delivery).
+- Personas: `xp-architect` (system architecture and boundaries), `xp-developer` (TDD, pair programming, incremental delivery).
 - Core skills: `xp-orchestrator`, `environment-manager`, `human-checkpoint`, `release-packager`.
-- Active working branch: `feature/overhaul-agentic-workflow`.
+- Active working branch: `feature/allow-duplicate-emails`.
 
 ## 6. Checkpoints & History
-- [ ] Architecture Approved
+- [x] Architecture Approved (human approval)
 - [ ] PR 1 Reviewed & Approved
 - [ ] Release Package Generated
 
